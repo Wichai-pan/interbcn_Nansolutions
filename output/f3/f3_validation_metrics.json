@@ -1,0 +1,111 @@
+{
+  "limitation_note": "F3 is prescriptive. Without intervention records (sales-contact A/B test) there is no proper outcome ground truth. Metrics here only assess construct/discriminative/negative validity, not real-world lift.",
+  "construct_validity": {
+    "top_100": {
+      "K": 100,
+      "median_potential_value": 32367.12,
+      "median_utilization": 0.0433,
+      "pct_active_recent": 0.61,
+      "pct_cold_start": 0.25,
+      "pct_high_potential": 0.66,
+      "pct_purchase_months_ge_3": 0.69
+    },
+    "top_500": {
+      "K": 500,
+      "median_potential_value": 16645.14,
+      "median_utilization": 0.0599,
+      "pct_active_recent": 0.592,
+      "pct_cold_start": 0.256,
+      "pct_high_potential": 0.554,
+      "pct_purchase_months_ge_3": 0.624
+    },
+    "top_1000": {
+      "K": 1000,
+      "median_potential_value": 11096.76,
+      "median_utilization": 0.0391,
+      "pct_active_recent": 0.525,
+      "pct_cold_start": 0.335,
+      "pct_high_potential": 0.458,
+      "pct_purchase_months_ge_3": 0.536
+    }
+  },
+  "discriminative_validity": {
+    "n_branch_A": 5826,
+    "spearman_vs_potential": 0.5868,
+    "kendall_vs_potential": 0.4511,
+    "spearman_vs_low_util": 0.7485,
+    "kendall_vs_low_util": 0.5735,
+    "topK_overlap": {
+      "100": {
+        "vs_potential": 0.64,
+        "vs_low_util": 0.18
+      },
+      "500": {
+        "vs_potential": 0.694,
+        "vs_low_util": 0.222
+      },
+      "1000": {
+        "vs_potential": 0.75,
+        "vs_low_util": 0.27
+      }
+    }
+  },
+  "negative_validation": {
+    "top_100": {
+      "K": 100,
+      "pct_in_F2_likely_lost": 0.0,
+      "pct_in_F2_at_risk": 0.09,
+      "pct_long_sleep_in_branch_A": 0.1867,
+      "pct_thin_history_in_branch_A": 0.08,
+      "median_utilization_top": 0.0433
+    },
+    "top_500": {
+      "K": 500,
+      "pct_in_F2_likely_lost": 0.0,
+      "pct_in_F2_at_risk": 0.144,
+      "pct_long_sleep_in_branch_A": 0.2043,
+      "pct_thin_history_in_branch_A": 0.1613,
+      "median_utilization_top": 0.0599
+    },
+    "top_1000": {
+      "K": 1000,
+      "pct_in_F2_likely_lost": 0.0,
+      "pct_in_F2_at_risk": 0.105,
+      "pct_long_sleep_in_branch_A": 0.2105,
+      "pct_thin_history_in_branch_A": 0.194,
+      "median_utilization_top": 0.0391
+    },
+    "top100_flag_composition": {
+      "FRESH_OPPORTUNITY": 0.47,
+      "COLD_START": 0.25,
+      "MONITOR": 0.19,
+      "TRANSITIONAL": 0.09
+    }
+  },
+  "profile_comparison": {
+    "All": {
+      "n": 12367,
+      "median_potential": 2223.12,
+      "median_utilization": 0.0,
+      "median_potential_gap": 1802.36,
+      "pct_cold_start": 0.5289,
+      "pct_F2_lost_or_risk": 0.0355
+    },
+    "P1 only": {
+      "n": 622,
+      "median_potential": 15721.98,
+      "median_utilization": 0.0593,
+      "median_potential_gap": 13868.31,
+      "pct_cold_start": 0.254,
+      "pct_F2_lost_or_risk": 0.1479
+    },
+    "P4 only": {
+      "n": 4894,
+      "median_potential": 1086.44,
+      "median_utilization": 0.0,
+      "median_potential_gap": 1086.44,
+      "pct_cold_start": 0.6412,
+      "pct_F2_lost_or_risk": 0.0333
+    }
+  }
+}

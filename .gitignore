@@ -18,3 +18,7 @@ output/stage2/gru_model.pt
 # OS
 .DS_Store
 Thumbs.db
+
+# Secrets (NEVER commit)
+.env
+*.env.local

@@ -1,0 +1,196 @@
+{
+  "scoring_date": "2026-05-09",
+  "top_n": 5,
+  "selection_params": {
+    "same_module_penalty": 0.7,
+    "same_client_penalty": 0.5
+  },
+  "actions": [
+    {
+      "alert_id": "F1-000001",
+      "rank_global": 1,
+      "client_id": "1000080301",
+      "product_family_biz": "Anestesia",
+      "province": "Pontevedra",
+      "segment_code": "36330",
+      "module": "F1",
+      "alert_type": "Replenishment",
+      "sub_type": "P1 Critical",
+      "unified_score": 1.0,
+      "module_score": 0.9095860854541186,
+      "module_rank_pct": 1.0,
+      "priority_level": "P1 Critical",
+      "confidence_level": "low",
+      "evidence": {
+        "days_since_last_purchase": 1617,
+        "expected_interval": 145.16007596067917,
+        "delay": 1471.8399240393207,
+        "seasonal_time_score": 11.238296348286205,
+        "reorder_probability": 0.8480561971664429,
+        "replenishment_score": 10.071551595239354
+      },
+      "linked_signals": [],
+      "status": "Pending",
+      "rank_top": 1,
+      "adjusted_score": 1.0,
+      "selection_reason": {
+        "raw_score": 1.0,
+        "adjusted_score": 1.0,
+        "penalties_applied": []
+      }
+    },
+    {
+      "alert_id": "F2-000001",
+      "rank_global": 2,
+      "client_id": "7135",
+      "product_family_biz": "Biomateriales",
+      "province": "Sta.Cruz Tenerife",
+      "segment_code": "38639",
+      "module": "F2",
+      "alert_type": "Lost Customer Risk",
+      "sub_type": "Likely Lost",
+      "unified_score": 1.0,
+      "module_score": 90.11492923327908,
+      "module_rank_pct": 1.0,
+      "priority_level": "P1 Critical",
+      "confidence_level": "high",
+      "evidence": {
+        "method": "silence_score",
+        "lost_status": "Likely Lost",
+        "days_since_last_purchase": 1753,
+        "silence_score": 115.32894736842104,
+        "threshold_used": 15.200000000000001,
+        "volume_drop_ratio": null,
+        "frequency_drop_ratio": null,
+        "hist_avg_monthly_value": null,
+        "recent_avg_monthly_value": null
+      },
+      "linked_signals": [],
+      "status": "Pending",
+      "rank_top": 2,
+      "adjusted_score": 1.0,
+      "selection_reason": {
+        "raw_score": 1.0,
+        "adjusted_score": 1.0,
+        "penalties_applied": []
+      }
+    },
+    {
+      "alert_id": "F3-000001",
+      "rank_global": 3,
+      "client_id": "1000081536",
+      "product_family_biz": "Biomateriales",
+      "province": "Cádiz",
+      "segment_code": null,
+      "module": "F3",
+      "alert_type": "Capture Opportunity",
+      "sub_type": "New Account Opportunity",
+      "unified_score": 1.0,
+      "module_score": 0.9743014785133218,
+      "module_rank_pct": 1.0,
+      "priority_level": "P1 Critical",
+      "confidence_level": "low",
+      "evidence": {
+        "opportunity_type": "New Account Opportunity",
+        "is_cold_start": true,
+        "potential_value": 92473.0,
+        "observed_value_12m": null,
+        "utilization_ratio": 0.0,
+        "potential_gap": 92473.0,
+        "capture_window_flag": "COLD_START",
+        "lost_status_f2": null
+      },
+      "linked_signals": [],
+      "status": "Pending",
+      "rank_top": 3,
+      "adjusted_score": 1.0,
+      "selection_reason": {
+        "raw_score": 1.0,
+        "adjusted_score": 1.0,
+        "penalties_applied": []
+      }
+    },
+    {
+      "alert_id": "F3-000002",
+      "rank_global": 4,
+      "client_id": "17168",
+      "product_family_biz": "Biomateriales",
+      "province": "Málaga",
+      "segment_code": "29008",
+      "module": "F3",
+      "alert_type": "Capture Opportunity",
+      "sub_type": "High Potential Underutilization",
+      "unified_score": 0.9999191396458317,
+      "module_score": 0.958185095093937,
+      "module_rank_pct": 0.9999191396458317,
+      "priority_level": "P1 Critical",
+      "confidence_level": "medium",
+      "evidence": {
+        "opportunity_type": "High Potential Underutilization",
+        "is_cold_start": false,
+        "potential_value": 110967.6,
+        "observed_value_12m": 1678.9266,
+        "utilization_ratio": 0.015129881154499014,
+        "potential_gap": 109288.6734,
+        "capture_window_flag": "FRESH_OPPORTUNITY",
+        "lost_status_f2": null
+      },
+      "linked_signals": [],
+      "status": "Pending",
+      "rank_top": 4,
+      "adjusted_score": 0.6999433977520821,
+      "selection_reason": {
+        "raw_score": 0.9999191396458317,
+        "adjusted_score": 0.6999433977520821,
+        "penalties_applied": [
+          {
+            "round": 3,
+            "reason": "same_module",
+            "vs_alert_id": "F3-000001",
+            "factor": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "alert_id": "F1-000002",
+      "rank_global": 7,
+      "client_id": "39452",
+      "product_family_biz": "Bioseguridad",
+      "province": "Toledo",
+      "segment_code": "45210",
+      "module": "F1",
+      "alert_type": "Replenishment",
+      "sub_type": "P1 Critical",
+      "unified_score": 0.999781181619256,
+      "module_score": 0.9064197261432589,
+      "module_rank_pct": 0.999781181619256,
+      "priority_level": "P1 Critical",
+      "confidence_level": "high",
+      "evidence": {
+        "days_since_last_purchase": 126,
+        "expected_interval": 23.333333333333332,
+        "delay": 102.66666666666667,
+        "seasonal_time_score": 16.301088619968866,
+        "reorder_probability": 0.8382223844528198,
+        "replenishment_score": 11.428379521386605
+      },
+      "linked_signals": [],
+      "status": "Pending",
+      "rank_top": 5,
+      "adjusted_score": 0.6998468271334791,
+      "selection_reason": {
+        "raw_score": 0.999781181619256,
+        "adjusted_score": 0.6998468271334791,
+        "penalties_applied": [
+          {
+            "round": 1,
+            "reason": "same_module",
+            "vs_alert_id": "F1-000001",
+            "factor": 0.7
+          }
+        ]
+      }
+    }
+  ]
+}

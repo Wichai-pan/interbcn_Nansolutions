@@ -1,0 +1,118 @@
+{
+  "observation_date": "2025-06-30",
+  "future_window_end": "2025-12-29",
+  "future_horizon_months": 6,
+  "n_alerts_backtest": 6144,
+  "overall_strict": {
+    "label": "y_strict (no purchase 6m)",
+    "auroc": 0.7333,
+    "auprc": 0.9123,
+    "n_pos": 4860,
+    "n_total": 6144,
+    "base_rate": 0.791,
+    "precision@50": 0.96,
+    "recall@50": 0.0099,
+    "lift@50": 1.2136,
+    "precision@100": 0.98,
+    "recall@100": 0.0202,
+    "lift@100": 1.2389,
+    "precision@200": 0.96,
+    "recall@200": 0.0395,
+    "lift@200": 1.2136,
+    "precision@500": 0.968,
+    "recall@500": 0.0996,
+    "lift@500": 1.2237,
+    "precision@1000": 0.964,
+    "recall@1000": 0.1984,
+    "lift@1000": 1.2187
+  },
+  "overall_lenient": {
+    "label": "y_lenient (>60% drop)",
+    "auroc": 0.7286,
+    "auprc": 0.9132,
+    "n_pos": 4897,
+    "n_total": 6144,
+    "base_rate": 0.797,
+    "precision@50": 0.96,
+    "recall@50": 0.0098,
+    "lift@50": 1.2045,
+    "precision@100": 0.98,
+    "recall@100": 0.02,
+    "lift@100": 1.2296,
+    "precision@200": 0.96,
+    "recall@200": 0.0392,
+    "lift@200": 1.2045,
+    "precision@500": 0.968,
+    "recall@500": 0.0988,
+    "lift@500": 1.2145,
+    "precision@1000": 0.964,
+    "recall@1000": 0.1969,
+    "lift@1000": 1.2095
+  },
+  "by_branch": {
+    "Branch A (silence)": {
+      "n_alerts": 3396,
+      "y_strict_rate": 0.8884,
+      "auroc_strict": 0.6355,
+      "auprc_strict": 0.9367
+    },
+    "Branch B (direct)": {
+      "n_alerts": 1529,
+      "y_strict_rate": 0.9457,
+      "auroc_strict": 0.5951,
+      "auprc_strict": 0.9585
+    },
+    "Branch C (historical)": {
+      "n_alerts": 1219,
+      "y_strict_rate": 0.3257,
+      "auroc_strict": 0.6636,
+      "auprc_strict": 0.4992
+    }
+  },
+  "hit_rate_by_lost_status": [
+    {
+      "lost_status": "At Risk",
+      "n": 765,
+      "strict_rate": 0.5412,
+      "lenient_rate": 0.5569
+    },
+    {
+      "lost_status": "Early Warning",
+      "n": 924,
+      "strict_rate": 0.4264,
+      "lenient_rate": 0.4502
+    },
+    {
+      "lost_status": "Likely Lost",
+      "n": 4455,
+      "strict_rate": 0.9095,
+      "lenient_rate": 0.9102
+    }
+  ],
+  "hit_rate_by_priority": [
+    {
+      "priority_level": "P1 Critical",
+      "n": 308,
+      "strict_rate": 0.9675,
+      "lenient_rate": 0.9675
+    },
+    {
+      "priority_level": "P2 High",
+      "n": 921,
+      "strict_rate": 0.962,
+      "lenient_rate": 0.962
+    },
+    {
+      "priority_level": "P3 Medium",
+      "n": 1843,
+      "strict_rate": 0.8861,
+      "lenient_rate": 0.8888
+    },
+    {
+      "priority_level": "P4 Low",
+      "n": 3072,
+      "strict_rate": 0.665,
+      "lenient_rate": 0.6755
+    }
+  ]
+}
