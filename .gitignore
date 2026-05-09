@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Large output files (parquet, model weights) — keep reports & JSON
+output/stage0/*.parquet
+output/stage1/*.parquet
+output/stage2/*.parquet
+output/stage2/gru_model.pt
+
+# OS
+.DS_Store
+Thumbs.db
