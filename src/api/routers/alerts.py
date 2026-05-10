@@ -4,7 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
-from ..data_loader import get_alert, get_alerts_df, serialize_records, update_status
+from ..data_loader import get_alert, get_alerts_df, get_scoring_date, serialize_records, update_status
 from ..models import Alert, AlertDetail, AlertListResponse, StatusUpdate
 
 
@@ -33,13 +33,13 @@ def list_alerts(
     status: Optional[str] = None,
     min_score: Optional[float] = None,
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
+    page_size: int = Query(default=20, ge=1, le=2000),
     sort_by: str = Query(default="score"),
     order: str = Query(default="desc"),
 ) -> AlertListResponse:
     df = get_alerts_df()
     if df.empty:
-        return AlertListResponse(total=0, page=page, page_size=page_size, data=[])
+        return AlertListResponse(scoring_date=get_scoring_date(), total=0, page=page, page_size=page_size, data=[])
 
     module = _norm_text(module)
     priority = _norm_text(priority)
@@ -71,7 +71,13 @@ def list_alerts(
         rows = []
     else:
         rows = serialize_records(df.iloc[start:end].to_dict(orient="records"))
-    return AlertListResponse(total=total, page=page, page_size=page_size, data=[Alert(**row) for row in rows])
+    return AlertListResponse(
+        scoring_date=get_scoring_date(),
+        total=total,
+        page=page,
+        page_size=page_size,
+        data=[Alert(**row) for row in rows],
+    )
 
 
 @router.get("/{alert_id}", response_model=AlertDetail)

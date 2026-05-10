@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .data_loader import load_all_data
 from .routers.actions import router as actions_router
@@ -37,4 +41,13 @@ app.include_router(alerts_router, prefix="/api")
 app.include_router(actions_router, prefix="/api")
 app.include_router(map_router, prefix="/api")
 app.include_router(clients_router, prefix="/api")
+
+# ── Static frontend ────────────────────────────────────────────────
+# MUST be mounted AFTER every API router; StaticFiles at "/" would
+# otherwise swallow /api/* requests.
+_web_dir = Path(os.getenv("WEB_DIR", Path(__file__).resolve().parents[2] / "web"))
+if _web_dir.is_dir():
+    app.mount("/", StaticFiles(directory=str(_web_dir), html=True), name="frontend")
+else:
+    print(f"[WARN] web/ directory not found at {_web_dir}, frontend not served")
 

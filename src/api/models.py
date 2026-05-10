@@ -30,16 +30,20 @@ class Alert(BaseModel):
     linked_signals: List[str] = Field(default_factory=list)
     created_at: str
     status: AllowedStatus = "open"
-
-
-class AlertDetail(Alert):
+    # Extra fields the dashboard renders (sub_type, evidence, alert_type)
+    # are kept on the base model so /api/alerts and /api/top-actions both
+    # carry enough payload for the front-end without an extra detail call.
     alert_type: Optional[str] = None
     sub_type: Optional[str] = None
     evidence: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AlertDetail(Alert):
     raw: Dict[str, Any] = Field(default_factory=dict)
 
 
 class OverviewResponse(BaseModel):
+    scoring_date: Optional[str] = None
     total_alerts: int
     p1_count: int
     p2_count: int
@@ -57,6 +61,7 @@ class ProvinceData(BaseModel):
 
 
 class AlertListResponse(BaseModel):
+    scoring_date: Optional[str] = None
     total: int
     page: int
     page_size: int

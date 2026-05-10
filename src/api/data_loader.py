@@ -233,6 +233,12 @@ def load_all_data() -> Dict[str, Any]:
     if isinstance(top_actions.get("actions"), list):
         top_records = _standardize_records(top_actions["actions"], "F4")
 
+    scoring_date = (
+        top_actions.get("scoring_date")
+        or f4_all.get("scoring_date")
+        or datetime.now(timezone.utc).date().isoformat()
+    )
+
     alerts_df = pd.DataFrame(alert_records)
     if not alerts_df.empty:
         alerts_df = alerts_df.sort_values(["score", "alert_id"], ascending=[False, True]).reset_index(drop=True)
@@ -242,8 +248,19 @@ def load_all_data() -> Dict[str, Any]:
         "parquets": parquets,
         "alerts_df": alerts_df,
         "top_actions": top_records,
+        "scoring_date": scoring_date,
+        "selection_params": top_actions.get("selection_params", {}),
         "loaded_at": _now_iso(),
     }
+
+
+def get_scoring_date() -> str:
+    return str(load_all_data().get("scoring_date") or datetime.now(timezone.utc).date().isoformat())
+
+
+def get_selection_params() -> Dict[str, Any]:
+    params = load_all_data().get("selection_params")
+    return params if isinstance(params, dict) else {}
 
 
 def reload_all_data() -> Dict[str, Any]:
