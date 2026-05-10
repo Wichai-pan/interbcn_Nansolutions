@@ -1,3 +1,7 @@
+# Slides:
+https://canva.link/9106qo23rhgyhbn canva link
+
+
 # Inibsa Smart Demand Signals — Commercial Intelligence Pipeline
 
 **Hackathon:** Interhack BCN 2026
