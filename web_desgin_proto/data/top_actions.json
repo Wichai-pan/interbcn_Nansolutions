@@ -1,0 +1,233 @@
+{
+  "scoring_date": "2026-05-09",
+  "top_n": 5,
+  "selection_params": {
+    "same_module_penalty": 0.7,
+    "same_client_penalty": 0.5
+  },
+  "actions": [
+    {
+      "alert_id": "F1-000001",
+      "rank_global": 1,
+      "client_id": "1000080301",
+      "product_family_biz": "Anestesia",
+      "province": "Pontevedra",
+      "segment_code": "36330",
+      "module": "F1",
+      "alert_type": "Replenishment",
+      "sub_type": "P1 Critical",
+      "unified_score": 1.0,
+      "module_score": 0.9095860854541186,
+      "module_rank_pct": 1.0,
+      "priority_level": "P1 Critical",
+      "confidence_level": "low",
+      "evidence": {
+        "days_since_last_purchase": 1617,
+        "expected_interval": 145.16007596067917,
+        "delay": 1471.8399240393207,
+        "seasonal_time_score": 11.238296348286205,
+        "reorder_probability": 0.8480561971664429,
+        "replenishment_score": 10.071551595239354
+      },
+      "linked_signals": [],
+      "status": "Pending",
+      "rank_top": 1,
+      "adjusted_score": 1.0,
+      "selection_reason": {
+        "raw_score": 1.0,
+        "adjusted_score": 1.0,
+        "penalties_applied": []
+      },
+      "explanation": {
+        "summary_en": "Client 1000080301 is overdue for an Anestesia order. Last purchase was 1617 days ago, significantly exceeding the expected 145.2-day interval. The alert is flagged in Q2 with low confidence, indicating a potential replenishment need.",
+        "summary_es": "El Cliente 1000080301 tiene un pedido de Anestesia pendiente. Su última compra fue hace 1617 días, superando el intervalo esperado de 145.2 días. La alerta se activa en el T2 con baja confianza, sugiriendo una necesidad de reposición.",
+        "recommendation_en": "Given the P1 Critical priority, contact Client 1000080301 by phone within 3 days to discuss their Anestesia needs.",
+        "recommendation_es": "Dada la prioridad P1 Crítica, contacte al Cliente 1000080301 por teléfono en los próximos 3 días para hablar sobre sus necesidades de Anestesia."
+      }
+    },
+    {
+      "alert_id": "F2-000001",
+      "rank_global": 2,
+      "client_id": "7135",
+      "product_family_biz": "Biomateriales",
+      "province": "Sta.Cruz Tenerife",
+      "segment_code": "38639",
+      "module": "F2",
+      "alert_type": "Lost Customer Risk",
+      "sub_type": "Likely Lost",
+      "unified_score": 1.0,
+      "module_score": 90.11492923327908,
+      "module_rank_pct": 1.0,
+      "priority_level": "P1 Critical",
+      "confidence_level": "high",
+      "evidence": {
+        "method": "silence_score",
+        "lost_status": "Likely Lost",
+        "days_since_last_purchase": 1753,
+        "silence_score": 115.32894736842104,
+        "threshold_used": 15.200000000000001,
+        "volume_drop_ratio": null,
+        "frequency_drop_ratio": null,
+        "hist_avg_monthly_value": null,
+        "recent_avg_monthly_value": null
+      },
+      "linked_signals": [],
+      "status": "Pending",
+      "rank_top": 2,
+      "adjusted_score": 1.0,
+      "selection_reason": {
+        "raw_score": 1.0,
+        "adjusted_score": 1.0,
+        "penalties_applied": []
+      },
+      "explanation": {
+        "summary_en": "Client 7135, a P1 Critical client in Biomateriales, shows signs of being Likely Lost. The silence_score method indicates a significant silence score of 115.33, far exceeding the threshold of 15.2, suggesting deteriorating engagement.",
+        "summary_es": "El Cliente 7135, un cliente P1 Crítico en Biomateriales, muestra signos de ser un Cliente Potencialmente Perdido. El método silence_score indica una puntuación de silencio de 115.33, superando el umbral de 15.2, lo que sugiere un compromiso decreciente.",
+        "recommendation_en": "Given the 'Likely Lost' status, a field visit or direct account manager outreach is recommended for Client 7135.",
+        "recommendation_es": "Dado el estado de 'Potencialmente Perdido', se recomienda una visita en persona o contacto directo del gestor de cuenta para el Cliente 7135."
+      }
+    },
+    {
+      "alert_id": "F3-000001",
+      "rank_global": 3,
+      "client_id": "1000081536",
+      "product_family_biz": "Biomateriales",
+      "province": "Cádiz",
+      "segment_code": null,
+      "module": "F3",
+      "alert_type": "Capture Opportunity",
+      "sub_type": "New Account Opportunity",
+      "unified_score": 1.0,
+      "module_score": 0.9743014785133218,
+      "module_rank_pct": 1.0,
+      "priority_level": "P1 Critical",
+      "confidence_level": "low",
+      "evidence": {
+        "opportunity_type": "New Account Opportunity",
+        "is_cold_start": true,
+        "potential_value": 92473.0,
+        "observed_value_12m": null,
+        "utilization_ratio": 0.0,
+        "potential_gap": 92473.0,
+        "capture_window_flag": "COLD_START",
+        "lost_status_f2": null
+      },
+      "linked_signals": [],
+      "status": "Pending",
+      "rank_top": 3,
+      "adjusted_score": 1.0,
+      "selection_reason": {
+        "raw_score": 1.0,
+        "adjusted_score": 1.0,
+        "penalties_applied": []
+      },
+      "explanation": {
+        "summary_en": "Client 1000081536 is a new account opportunity with a potential value of 92,473.0 EUR in Biomateriales. This client has never purchased from Inibsa, indicating significant unmet demand.",
+        "summary_es": "El Cliente 1000081536 es una nueva oportunidad de cuenta con un potencial de 92.473,0 EUR en Biomateriales. Este cliente nunca ha comprado a Inibsa, lo que indica una demanda no capturada significativa.",
+        "recommendation_en": "Initiate prospecting efforts and schedule an introductory visit to engage this new account and capture the identified potential.",
+        "recommendation_es": "Inicie la prospección y programe una visita introductoria para captar esta nueva cuenta y el potencial identificado."
+      }
+    },
+    {
+      "alert_id": "F3-000002",
+      "rank_global": 4,
+      "client_id": "17168",
+      "product_family_biz": "Biomateriales",
+      "province": "Málaga",
+      "segment_code": "29008",
+      "module": "F3",
+      "alert_type": "Capture Opportunity",
+      "sub_type": "High Potential Underutilization",
+      "unified_score": 0.9999191396458317,
+      "module_score": 0.958185095093937,
+      "module_rank_pct": 0.9999191396458317,
+      "priority_level": "P1 Critical",
+      "confidence_level": "medium",
+      "evidence": {
+        "opportunity_type": "High Potential Underutilization",
+        "is_cold_start": false,
+        "potential_value": 110967.6,
+        "observed_value_12m": 1678.9266,
+        "utilization_ratio": 0.015129881154499014,
+        "potential_gap": 109288.6734,
+        "capture_window_flag": "FRESH_OPPORTUNITY",
+        "lost_status_f2": null
+      },
+      "linked_signals": [],
+      "status": "Pending",
+      "rank_top": 4,
+      "adjusted_score": 0.6999433977520821,
+      "selection_reason": {
+        "raw_score": 0.9999191396458317,
+        "adjusted_score": 0.6999433977520821,
+        "penalties_applied": [
+          {
+            "round": 3,
+            "reason": "same_module",
+            "vs_alert_id": "F3-000001",
+            "factor": 0.7
+          }
+        ]
+      },
+      "explanation": {
+        "summary_en": "Client 17168 shows a High Potential Underutilization in Biomateriales, capturing only 1.51% of their estimated potential. This represents a significant potential unmet demand of 109,288.67 EUR, indicating a FRESH_OPPORTUNITY for growth.",
+        "summary_es": "El Cliente 17168 presenta una Subutilización de Alto Potencial en Biomateriales, capturando solo el 1.51% de su potencial estimado. Esto representa una demanda no capturada de 109.288,67 EUR, indicando una FRESH_OPPORTUNITY de crecimiento.",
+        "recommendation_en": "Engage Client 17168 with an upsell pitch focused on their high potential in Biomateriales to capture the identified demand.",
+        "recommendation_es": "Contacte al Cliente 17168 con una propuesta de venta adicional centrada en su alto potencial en Biomateriales para capturar la demanda identificada."
+      }
+    },
+    {
+      "alert_id": "F1-000002",
+      "rank_global": 7,
+      "client_id": "39452",
+      "product_family_biz": "Bioseguridad",
+      "province": "Toledo",
+      "segment_code": "45210",
+      "module": "F1",
+      "alert_type": "Replenishment",
+      "sub_type": "P1 Critical",
+      "unified_score": 0.999781181619256,
+      "module_score": 0.9064197261432589,
+      "module_rank_pct": 0.999781181619256,
+      "priority_level": "P1 Critical",
+      "confidence_level": "high",
+      "evidence": {
+        "days_since_last_purchase": 126,
+        "expected_interval": 23.333333333333332,
+        "delay": 102.66666666666667,
+        "seasonal_time_score": 16.301088619968866,
+        "reorder_probability": 0.8382223844528198,
+        "replenishment_score": 11.428379521386605
+      },
+      "linked_signals": [],
+      "status": "Pending",
+      "rank_top": 5,
+      "adjusted_score": 0.6998468271334791,
+      "selection_reason": {
+        "raw_score": 0.999781181619256,
+        "adjusted_score": 0.6998468271334791,
+        "penalties_applied": [
+          {
+            "round": 1,
+            "reason": "same_module",
+            "vs_alert_id": "F1-000001",
+            "factor": 0.7
+          }
+        ]
+      },
+      "explanation": {
+        "summary_en": "Client 39452, a Bioseguridad client in Q2, is 126 days since last purchase, significantly exceeding their expected 23.3-day interval. This high-confidence alert indicates a strong likelihood of reordering soon.",
+        "summary_es": "El Cliente 39452, de Bioseguridad en Q2, lleva 126 días sin comprar, superando su intervalo esperado de 23.3 días. Esta alerta de alta confianza indica una alta probabilidad de recompra.",
+        "recommendation_en": "Given the P1 Critical priority, contact Client 39452 by phone within 3 days to discuss their Bioseguridad needs.",
+        "recommendation_es": "Dada la prioridad P1 Crítica, contacte al Cliente 39452 por teléfono en los próximos 3 días para hablar sobre sus necesidades de Bioseguridad."
+      }
+    }
+  ],
+  "explanation_meta": {
+    "model": "gemini-2.5-flash",
+    "temperature": 0.3,
+    "n_items": 5,
+    "n_fallback": 0,
+    "generated_at": "2026-05-10T00:13:48"
+  }
+}

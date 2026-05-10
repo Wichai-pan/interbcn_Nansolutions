@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Inibsa · Smart Demand Signals</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          inibsa: {
+            red:  '#E95344',
+            blue: '#479DDE',
+            ink:  '#0F1B2D',
+            mute: '#6B7A90',
+            line: '#E6EAF1',
+            soft: '#F4F6FA',
+          },
+        },
+        boxShadow: {
+          'card':  '0 1px 2px rgba(15,27,45,0.04), 0 1px 3px rgba(15,27,45,0.04)',
+          'pop':   '0 8px 24px rgba(15,27,45,0.10), 0 2px 6px rgba(15,27,45,0.05)',
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  :root {
+    --inibsa-red: #E95344;
+    --inibsa-blue: #479DDE;
+    --inibsa-ink: #0F1B2D;
+    --inibsa-mute: #6B7A90;
+    --inibsa-line: #E6EAF1;
+    --inibsa-soft: #F4F6FA;
+    --f1: #479DDE;
+    --f2: #E95344;
+    --f3: #7C5CE6;
+  }
+  html, body { background: #FAFBFD; color: var(--inibsa-ink); }
+  body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+
+  /* Subtle radial backdrop */
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 12% 0%, rgba(71,157,222,0.06), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 95% 0%, rgba(233,83,68,0.05), transparent 60%);
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--inibsa-line);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(15,27,45,0.04), 0 1px 3px rgba(15,27,45,0.04);
+  }
+
+  /* Module accent strips */
+  .mod-F1 { --mod: var(--f1); --mod-soft: rgba(71,157,222,0.10); }
+  .mod-F2 { --mod: var(--f2); --mod-soft: rgba(233,83,68,0.10); }
+  .mod-F3 { --mod: var(--f3); --mod-soft: rgba(124,92,230,0.10); }
+
+  /* Top-action accordion */
+  .action-card {
+    transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease;
+    cursor: pointer;
+  }
+  .action-card:hover { box-shadow: 0 6px 20px rgba(15,27,45,0.08); border-color: #D8DEEA; }
+  .action-card.open  { box-shadow: 0 10px 30px rgba(15,27,45,0.10); border-color: #C8D2E2; }
+
+  .action-body {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .45s cubic-bezier(.4,0,.2,1);
+  }
+  .action-card.open .action-body { max-height: 800px; }
+
+  .chev { transition: transform .3s ease; }
+  .action-card.open .chev { transform: rotate(180deg); }
+
+  /* Tabs */
+  .tab-btn {
+    position: relative;
+    color: var(--inibsa-mute);
+    transition: color .2s ease;
+  }
+  .tab-btn:hover { color: var(--inibsa-ink); }
+  .tab-btn.active { color: var(--inibsa-ink); }
+  .tab-btn.active::after {
+    content: ''; position: absolute; left: 12px; right: 12px; bottom: -1px;
+    height: 2px; border-radius: 2px; background: var(--mod, var(--inibsa-ink));
+  }
+
+  /* Status pill cycler */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background .2s ease, border-color .2s ease;
+    user-select: none;
+  }
+  .status-pill .dot { width: 6px; height: 6px; border-radius: 999px; }
+  .status-Pending   { background: #FFF7ED; color: #B25700; border-color: #FED7AA; }
+  .status-Pending   .dot { background: #F59E0B; }
+  .status-Contacted { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
+  .status-Contacted .dot { background: #3B82F6; }
+  .status-Resolved  { background: #ECFDF5; color: #066E4F; border-color: #A7F3D0; }
+  .status-Resolved  .dot { background: #10B981; }
+
+  /* Priority pill */
+  .pri { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: .01em; }
+  .pri-P1 { background: #FEE2E2; color: #B91C1C; }
+  .pri-P2 { background: #FEF3C7; color: #B45309; }
+  .pri-P3 { background: #DBEAFE; color: #1D4ED8; }
+  .pri-P4 { background: #E5E7EB; color: #374151; }
+
+  /* Module badge */
+  .mod-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    background: var(--mod-soft); color: var(--mod);
+  }
+  .mod-badge .square { width: 6px; height: 6px; border-radius: 2px; background: var(--mod); }
+
+  /* Confidence pill */
+  .conf { font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 4px; }
+  .conf-high   { background: #ECFDF5; color: #066E4F; }
+  .conf-medium { background: #FFF7ED; color: #B25700; }
+  .conf-low    { background: #F1F5F9; color: #475569; }
+
+  /* Table */
+  table.alerts { width: 100%; border-collapse: separate; border-spacing: 0; }
+  table.alerts thead th {
+    font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--inibsa-mute); text-align: left; padding: 12px 14px;
+    border-bottom: 1px solid var(--inibsa-line); background: #FBFCFE;
+    position: sticky; top: 0; z-index: 1;
+  }
+  table.alerts tbody td {
+    padding: 12px 14px; font-size: 13px;
+    border-bottom: 1px solid #F0F2F7;
+    vertical-align: middle;
+  }
+  table.alerts tbody tr { transition: background .15s ease; }
+  table.alerts tbody tr:hover { background: #FBFCFE; }
+  table.alerts tbody tr.expanded { background: #F7F9FD; }
+  table.alerts tbody tr td.ev-cell { padding: 0; }
+  .evidence-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px 28px; padding: 16px 28px 22px 56px;
+    background: #F7F9FD; border-bottom: 1px solid #F0F2F7;
+  }
+  .evidence-grid .k { font-size: 10.5px; color: var(--inibsa-mute); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+  .evidence-grid .v { font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--inibsa-ink); margin-top: 2px; }
+
+  /* Score bar */
+  .score-bar { width: 64px; height: 4px; background: #EEF1F6; border-radius: 999px; overflow: hidden; }
+  .score-fill { height: 100%; background: var(--mod, var(--inibsa-ink)); border-radius: 999px; }
+
+  /* Lang toggle */
+  .lang-toggle {
+    display: inline-flex; padding: 2px;
+    background: #F0F3F8; border-radius: 999px;
+    border: 1px solid var(--inibsa-line);
+  }
+  .lang-toggle button {
+    font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 999px; color: var(--inibsa-mute);
+    transition: all .18s ease;
+  }
+  .lang-toggle button.active { background: white; color: var(--inibsa-ink); box-shadow: 0 1px 2px rgba(15,27,45,0.08); }
+
+  /* Filter chips */
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; font-size: 12px; font-weight: 500;
+    border-radius: 8px; border: 1px solid var(--inibsa-line);
+    background: white; color: var(--inibsa-ink);
+    cursor: pointer; transition: all .15s ease;
+  }
+  .filter-chip:hover { border-color: #C8D2E2; }
+  .filter-chip.active { background: var(--inibsa-ink); color: white; border-color: var(--inibsa-ink); }
+
+  select.flt {
+    appearance: none; -webkit-appearance: none;
+    font-size: 12px; font-weight: 500; padding: 6px 28px 6px 10px;
+    border-radius: 8px; border: 1px solid var(--inibsa-line);
+    background: white url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%236B7A90' stroke-width='1.4' fill='none' stroke-linecap='round'/></svg>") no-repeat right 10px center;
+    color: var(--inibsa-ink); min-width: 130px;
+  }
+  select.flt:focus { outline: 2px solid var(--inibsa-blue); outline-offset: 1px; }
+
+  /* KPI cards */
+  .kpi { display: flex; flex-direction: column; gap: 4px; }
+  .kpi .lbl { font-size: 11px; font-weight: 600; color: var(--inibsa-mute); text-transform: uppercase; letter-spacing: .06em; }
+  .kpi .val { font-size: 32px; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
+  .kpi .sub { font-size: 12px; color: var(--inibsa-mute); }
+
+  .skel {
+    background: linear-gradient(90deg, #F2F4F8 25%, #EAEDF3 50%, #F2F4F8 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+    border-radius: 8px;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* Pulse */
+  @keyframes pulse-soft { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+  .pulse { animation: pulse-soft 2s ease-in-out infinite; }
+
+  /* Module breakdown bar */
+  .mod-bar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: #EEF1F6; }
+  .mod-bar > span { display: block; height: 100%; }
+
+  /* Map plot bg */
+  #mapPlot .gtitle, #mapPlot text { font-family: 'Inter', sans-serif !important; }
+
+  /* Subtle scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #D6DBE4; border-radius: 999px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* Animation entry */
+  @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .anim-in { animation: slide-up .5s ease both; }
+</style>
+</head>
+
+<body class="font-sans">
+
+<!-- ======== HEADER ======== -->
+<header class="relative z-10 border-b border-inibsa-line bg-white/80 backdrop-blur-md sticky top-0">
+  <div class="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-6">
+    <!-- Brand -->
+    <div class="flex items-center gap-3 min-w-0">
+      <!-- Inibsa-inspired mark: red+blue intersecting circles abstraction -->
+      <div class="relative w-9 h-9 flex-shrink-0">
+        <span class="absolute left-0 top-1 w-6 h-6 rounded-full" style="background:#E95344; opacity:.92;"></span>
+        <span class="absolute right-0 bottom-0 w-6 h-6 rounded-full" style="background:#479DDE; opacity:.85; mix-blend-mode: multiply;"></span>
+      </div>
+      <div class="min-w-0">
+        <h1 class="text-[15px] font-bold tracking-tight leading-tight truncate">
+          <span class="text-inibsa-ink">Inibsa</span>
+          <span class="text-inibsa-mute font-medium" data-i="brand_sub">Smart Demand Signals</span>
+        </h1>
+        <p class="text-[11px] text-inibsa-mute font-medium tracking-wide">
+          <span data-i="brand_tagline">Daily commercial intelligence for sales teams</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div class="flex items-center gap-5">
+      <div class="hidden md:flex items-center gap-2 text-[11px] text-inibsa-mute">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse"></span>
+        <span data-i="sys_active" class="font-medium">System active</span>
+      </div>
+      <div class="hidden sm:block text-right leading-tight">
+        <div id="dateLong"   class="text-[13px] font-semibold tabular-nums tracking-tight"></div>
+        <div id="dateScoring" class="text-[11px] text-inibsa-mute font-medium"></div>
+      </div>
+      <div class="lang-toggle" id="langToggle" role="tablist" aria-label="Language">
+        <button data-lang="en" class="active">EN</button>
+        <button data-lang="es">ES</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ======== MAIN ======== -->
+<main class="relative z-1 max-w-[1600px] mx-auto px-6 py-6">
+
+  <!-- ===== TOP 5 ACTIONS ===== -->
+  <section aria-label="Today's top actions" class="mb-7">
+    <div class="flex items-end justify-between mb-4 anim-in">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <span class="w-1 h-5 rounded-full bg-inibsa-red"></span>
+          <h2 class="text-[15px] font-bold tracking-tight" data-i="top5_title">Today's Top 5 Actions</h2>
+          <span class="text-[11px] font-semibold text-inibsa-red bg-red-50 border border-red-100 px-2 py-0.5 rounded-full" data-i="top5_count">5 prioritized</span>
+        </div>
+        <p class="text-[12px] text-inibsa-mute mt-1.5" data-i="top5_sub">Cross-module ranking. Penalties applied for module &amp; client overlap. Click any card for the full reasoning.</p>
+      </div>
+      <div class="text-[11px] text-inibsa-mute hidden md:block">
+        <span data-i="generated_by">Explanations generated by</span>
+        <span class="font-mono font-medium text-inibsa-ink ml-0.5">gemini-2.5-flash</span>
+      </div>
+    </div>
+
+    <div id="topActions" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+      <!-- skeleton placeholders -->
+      <div class="skel h-44"></div><div class="skel h-44"></div><div class="skel h-44"></div><div class="skel h-44"></div><div class="skel h-44"></div>
+    </div>
+  </section>
+
+  <!-- ===== TABS + FILTERS ===== -->
+  <section class="card overflow-hidden anim-in" style="animation-delay:.08s">
+    <!-- Tab nav -->
+    <div class="flex items-end justify-between border-b border-inibsa-line px-2">
+      <div id="tabBar" class="flex items-end gap-1 overflow-x-auto" role="tablist">
+        <button class="tab-btn active px-3 py-3.5 text-[13px] font-semibold whitespace-nowrap" data-tab="overview" data-i="tab_overview">Overview</button>
+        <button class="tab-btn px-3 py-3.5 text-[13px] font-semibold whitespace-nowrap mod-F1" data-tab="F1">
+          <span class="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style="background:var(--f1)"></span>
+          <span data-i="tab_f1">F1 · Replenishment</span>
+          <span class="ml-1 text-[10.5px] text-inibsa-mute font-mono" data-count="F1">·</span>
+        </button>
+        <button class="tab-btn px-3 py-3.5 text-[13px] font-semibold whitespace-nowrap mod-F2" data-tab="F2">
+          <span class="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style="background:var(--f2)"></span>
+          <span data-i="tab_f2">F2 · Lost Customers</span>
+          <span class="ml-1 text-[10.5px] text-inibsa-mute font-mono" data-count="F2">·</span>
+        </button>
+        <button class="tab-btn px-3 py-3.5 text-[13px] font-semibold whitespace-nowrap mod-F3" data-tab="F3">
+          <span class="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style="background:var(--f3)"></span>
+          <span data-i="tab_f3">F3 · Capture Opportunities</span>
+          <span class="ml-1 text-[10.5px] text-inibsa-mute font-mono" data-count="F3">·</span>
+        </button>
+      </div>
+      <div class="text-[11px] text-inibsa-mute hidden md:flex items-center gap-1.5 pr-3 pb-3.5">
+        <span class="w-1 h-1 rounded-full bg-inibsa-mute"></span>
+        <span data-i="sample_note"></span>
+      </div>
+    </div>
+
+    <!-- ===== Overview pane ===== -->
+    <div data-pane="overview" class="pane">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 p-5">
+        <!-- KPIs -->
+        <div class="lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="card p-4 kpi">
+            <span class="lbl" data-i="kpi_total">Total alerts</span>
+            <span class="val tabular-nums" id="kpi_total">—</span>
+            <span class="sub" data-i="kpi_total_sub">across F1+F2+F3</span>
+          </div>
+          <div class="card p-4 kpi">
+            <span class="lbl" data-i="kpi_p1">P1 critical</span>
+            <span class="val tabular-nums text-inibsa-red" id="kpi_p1">—</span>
+            <span class="sub" data-i="kpi_p1_sub">need attention today</span>
+          </div>
+          <div class="card p-4 kpi">
+            <span class="lbl" data-i="kpi_provinces">Provinces affected</span>
+            <span class="val tabular-nums" id="kpi_prov">—</span>
+            <span class="sub" data-i="kpi_provinces_sub">of 52 nationwide</span>
+          </div>
+          <div class="card p-4 kpi">
+            <span class="lbl" data-i="kpi_potential">Potential at stake</span>
+            <span class="val tabular-nums" id="kpi_pot" style="color:var(--f3)">—</span>
+            <span class="sub" data-i="kpi_potential_sub">F3 untapped EUR / 12m</span>
+          </div>
+
+          <!-- Module breakdown -->
+          <div class="card p-5 col-span-2 sm:col-span-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-[13px] font-semibold" data-i="mod_breakdown">Alerts by module</h3>
+              <span class="text-[11px] text-inibsa-mute" data-i="mod_breakdown_sub">share of active signals</span>
+            </div>
+            <div class="mod-bar mb-3">
+              <span id="bar-F1" style="background:var(--f1)"></span>
+              <span id="bar-F2" style="background:var(--f2)"></span>
+              <span id="bar-F3" style="background:var(--f3)"></span>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <div>
+                <div class="flex items-center gap-1.5 text-[11px] font-semibold"><span class="w-2 h-2 rounded-sm" style="background:var(--f1)"></span><span data-i="mod_f1">Replenishment</span></div>
+                <div class="text-[20px] font-bold tabular-nums leading-none mt-1" id="cnt-F1">—</div>
+                <div class="text-[11px] text-inibsa-mute mt-0.5"><span data-i="lbl_p1_critical">P1 critical</span> · <span class="font-medium text-inibsa-ink" id="p1-F1">—</span></div>
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5 text-[11px] font-semibold"><span class="w-2 h-2 rounded-sm" style="background:var(--f2)"></span><span data-i="mod_f2">Lost customers</span></div>
+                <div class="text-[20px] font-bold tabular-nums leading-none mt-1" id="cnt-F2">—</div>
+                <div class="text-[11px] text-inibsa-mute mt-0.5"><span data-i="lbl_likely_lost">Likely lost</span> · <span class="font-medium text-inibsa-ink" id="ll-F2">—</span></div>
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5 text-[11px] font-semibold"><span class="w-2 h-2 rounded-sm" style="background:var(--f3)"></span><span data-i="mod_f3">Capture opps</span></div>
+                <div class="text-[20px] font-bold tabular-nums leading-none mt-1" id="cnt-F3">—</div>
+                <div class="text-[11px] text-inibsa-mute mt-0.5"><span data-i="lbl_new_account">New accounts</span> · <span class="font-medium text-inibsa-ink" id="na-F3">—</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Product family chart -->
+          <div class="card p-5 col-span-2 sm:col-span-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-[13px] font-semibold" data-i="family_title">Top product families by alert volume</h3>
+              <span class="text-[11px] text-inibsa-mute" data-i="family_sub">stacked by module</span>
+            </div>
+            <div id="familyChart" style="height: 220px;"></div>
+          </div>
+        </div>
+
+        <!-- Map -->
+        <div class="lg:col-span-5">
+          <div class="card p-5 h-full flex flex-col">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <h3 class="text-[13px] font-semibold" data-i="map_title">Alert density across Spain</h3>
+                <p class="text-[11px] text-inibsa-mute mt-0.5" data-i="map_sub">Bubble size &amp; color reflect active alert count by province</p>
+              </div>
+              <div class="flex items-center gap-1 text-[10.5px] text-inibsa-mute">
+                <span>low</span>
+                <span class="inline-block w-12 h-1.5 rounded-full" style="background: linear-gradient(90deg, #DCEAFA, #E95344);"></span>
+                <span>high</span>
+              </div>
+            </div>
+            <div id="mapPlot" class="flex-1" style="min-height:420px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Module panes ===== -->
+    <div data-pane="F1" class="pane hidden mod-F1"></div>
+    <div data-pane="F2" class="pane hidden mod-F2"></div>
+    <div data-pane="F3" class="pane hidden mod-F3"></div>
+  </section>
+
+  <footer class="text-center text-[11px] text-inibsa-mute py-6">
+    <span data-i="footer">Inibsa Smart Demand Signals · Dashboard prototype · Data refreshed</span>
+    <span id="footerDate" class="font-mono"></span>
+  </footer>
+</main>
+
+<script>// Approximate geographic centroids for Spanish provinces (lat, lon)
+// Used by the bubble heatmap. Names match the JSON's province field exactly.
+window.PROVINCE_CENTROIDS = {
+  "A Coruña":          [43.0, -8.4],
+  "Álava":             [42.85, -2.67],
+  "Albacete":          [38.99, -1.86],
+  "Alicante":          [38.35, -0.48],
+  "Almería":           [37.0, -2.45],
+  "Asturias":          [43.36, -5.85],
+  "Ávila":             [40.66, -4.7],
+  "Badajoz":           [38.88, -6.97],
+  "Baleares":          [39.6, 2.9],
+  "Barcelona":         [41.7, 2.0],
+  "Burgos":            [42.34, -3.7],
+  "Cáceres":           [39.47, -6.37],
+  "Cádiz":             [36.5, -5.95],
+  "Cantabria":         [43.2, -4.0],
+  "Castellón":         [40.0, -0.05],
+  "Ciudad Real":       [38.99, -3.93],
+  "Córdoba":           [37.88, -4.78],
+  "Cuenca":            [40.07, -2.13],
+  "Girona":            [42.0, 2.82],
+  "Granada":           [37.18, -3.6],
+  "Guadalajara":       [40.63, -3.17],
+  "Guipúzcoa":         [43.18, -2.0],
+  "Huelva":            [37.5, -6.94],
+  "Huesca":            [42.13, -0.4],
+  "Jaén":              [38.0, -3.5],
+  "La Rioja":          [42.27, -2.5],
+  "Las Palmas":        [28.13, -15.43],
+  "León":              [42.6, -5.57],
+  "Lleida":            [41.8, 0.95],
+  "Lugo":              [43.0, -7.55],
+  "Madrid":            [40.42, -3.7],
+  "Málaga":            [36.72, -4.42],
+  "Murcia":            [37.99, -1.13],
+  "Navarra":           [42.7, -1.65],
+  "Ourense":           [42.34, -7.86],
+  "Palencia":          [42.0, -4.5],
+  "Pontevedra":        [42.43, -8.65],
+  "Salamanca":         [40.97, -5.66],
+  "Sta.Cruz Tenerife": [28.46, -16.25],
+  "Santa Cruz de Tenerife": [28.46, -16.25],
+  "Segovia":           [40.95, -4.12],
+  "Sevilla":           [37.39, -5.98],
+  "Soria":             [41.77, -2.47],
+  "Tarragona":         [41.12, 1.25],
+  "Teruel":            [40.34, -1.1],
+  "Toledo":            [39.86, -4.02],
+  "Valencia":          [39.47, -0.38],
+  "Valladolid":        [41.65, -4.72],
+  "Vizcaya":           [43.25, -2.93],
+  "Zamora":            [41.5, -5.75],
+  "Zaragoza":          [41.65, -0.89],
+  "Ceuta":             [35.89, -5.32],
+  "Melilla":           [35.29, -2.94]
+};
+</script>
+<script>window.I18N = {
+  en: {
+    brand_sub: " · Smart Demand Signals",
+    brand_tagline: "Daily commercial intelligence for sales teams",
+    sys_active: "System active",
+    sample_note: "Showing top 1,500 of 17,319 alerts for performance",
+
+    top5_title: "Today's Top 5 Actions",
+    top5_sub: "Cross-module ranking with same-module / same-client penalties applied. Click any card for the full reasoning.",
+    top5_count: "5 prioritized",
+    generated_by: "AI explanations by",
+
+    tab_overview: "Overview",
+    tab_f1: "F1 · Replenishment",
+    tab_f2: "F2 · Lost customers",
+    tab_f3: "F3 · Capture opportunities",
+
+    kpi_total: "Total alerts",
+    kpi_total_sub: "across F1 + F2 + F3",
+    kpi_p1: "P1 critical",
+    kpi_p1_sub: "need attention today",
+    kpi_provinces: "Provinces affected",
+    kpi_provinces_sub: "out of 52 nationwide",
+    kpi_potential: "Potential at stake",
+    kpi_potential_sub: "F3 untapped EUR / 12m",
+
+    mod_breakdown: "Alerts by module",
+    mod_breakdown_sub: "share of active signals",
+    mod_f1: "Replenishment",
+    mod_f2: "Lost customers",
+    mod_f3: "Capture opps",
+    lbl_p1_critical: "P1 critical",
+    lbl_likely_lost: "Likely lost",
+    lbl_new_account: "New accounts",
+
+    family_title: "Top product families by alert volume",
+    family_sub: "stacked by module",
+
+    map_title: "Alert density across Spain",
+    map_sub: "Bubble size & color reflect active alert count by province",
+
+    flt_province: "Province",
+    flt_priority: "Priority",
+    flt_subtype: "Sub-type",
+    flt_status: "Status",
+    flt_search: "Search client ID…",
+    flt_all: "All",
+    flt_reset: "Reset",
+    n_results: "results",
+
+    th_rank: "#",
+    th_alert: "Alert",
+    th_client: "Client",
+    th_family: "Family",
+    th_province: "Province",
+    th_priority: "Priority",
+    th_score: "Score",
+    th_evidence: "Evidence",
+    th_confidence: "Conf.",
+    th_status: "Status",
+
+    why: "Why",
+    do: "Recommended action",
+    evidence: "Evidence",
+    expand: "Show details",
+    no_results: "No alerts match your filters",
+    loading: "Loading data…",
+
+    pane_f1_title: "F1 — Replenishment alerts",
+    pane_f1_sub: "Customers overdue versus their expected reorder cadence. Lead with phone outreach.",
+    pane_f2_title: "F2 — Lost-customer risk",
+    pane_f2_sub: "Accounts whose silence has crossed historical thresholds. Field visit recommended.",
+    pane_f3_title: "F3 — Capture opportunities",
+    pane_f3_sub: "Accounts with unmet demand based on potential vs. observed value. Open with an upsell or prospecting pitch.",
+
+    footer: "Inibsa Smart Demand Signals · Dashboard prototype · Data refreshed",
+
+    status_Pending: "Pending",
+    status_Contacted: "Contacted",
+    status_Resolved: "Resolved",
+
+    conf_high: "high",
+    conf_medium: "medium",
+    conf_low: "low",
+
+    ev: {
+      days_since_last_purchase: "Days since last order",
+      expected_interval: "Expected interval (d)",
+      delay: "Delay (d)",
+      seasonal_time_score: "Seasonal-time score",
+      reorder_probability: "Reorder probability",
+      replenishment_score: "Replenishment score",
+      method: "Method",
+      lost_status: "Lost status",
+      silence_score: "Silence score",
+      threshold_used: "Threshold",
+      volume_drop_ratio: "Volume drop",
+      frequency_drop_ratio: "Frequency drop",
+      hist_avg_monthly_value: "Hist. avg / month",
+      recent_avg_monthly_value: "Recent avg / month",
+      opportunity_type: "Opportunity type",
+      is_cold_start: "Cold start",
+      potential_value: "Potential value (EUR)",
+      observed_value_12m: "Observed 12m (EUR)",
+      utilization_ratio: "Utilization",
+      potential_gap: "Gap (EUR)",
+      capture_window_flag: "Capture window",
+      lost_status_f2: "F2 status",
+    },
+  },
+
+  es: {
+    brand_sub: " · Señales Inteligentes de Demanda",
+    brand_tagline: "Inteligencia comercial diaria para equipos de ventas",
+    sys_active: "Sistema activo",
+    sample_note: "Mostrando las 1.500 alertas más relevantes de 17.319",
+
+    top5_title: "Top 5 acciones de hoy",
+    top5_sub: "Ranking entre módulos con penalizaciones por mismo-módulo / mismo-cliente. Haz clic en cualquier tarjeta para ver el razonamiento completo.",
+    top5_count: "5 priorizadas",
+    generated_by: "Explicaciones IA por",
+
+    tab_overview: "Resumen",
+    tab_f1: "F1 · Reposición",
+    tab_f2: "F2 · Clientes perdidos",
+    tab_f3: "F3 · Oportunidades de captación",
+
+    kpi_total: "Alertas totales",
+    kpi_total_sub: "entre F1 + F2 + F3",
+    kpi_p1: "P1 críticas",
+    kpi_p1_sub: "requieren atención hoy",
+    kpi_provinces: "Provincias afectadas",
+    kpi_provinces_sub: "de 52 a nivel nacional",
+    kpi_potential: "Potencial en juego",
+    kpi_potential_sub: "EUR no captados F3 / 12m",
+
+    mod_breakdown: "Alertas por módulo",
+    mod_breakdown_sub: "reparto de señales activas",
+    mod_f1: "Reposición",
+    mod_f2: "Clientes perdidos",
+    mod_f3: "Captación",
+    lbl_p1_critical: "P1 críticas",
+    lbl_likely_lost: "Probable pérdida",
+    lbl_new_account: "Cuentas nuevas",
+
+    family_title: "Familias de producto por volumen de alertas",
+    family_sub: "apiladas por módulo",
+
+    map_title: "Densidad de alertas en España",
+    map_sub: "El tamaño y color reflejan el número de alertas activas por provincia",
+
+    flt_province: "Provincia",
+    flt_priority: "Prioridad",
+    flt_subtype: "Subtipo",
+    flt_status: "Estado",
+    flt_search: "Buscar ID de cliente…",
+    flt_all: "Todas",
+    flt_reset: "Limpiar",
+    n_results: "resultados",
+
+    th_rank: "#",
+    th_alert: "Alerta",
+    th_client: "Cliente",
+    th_family: "Familia",
+    th_province: "Provincia",
+    th_priority: "Prioridad",
+    th_score: "Score",
+    th_evidence: "Evidencia",
+    th_confidence: "Conf.",
+    th_status: "Estado",
+
+    why: "Por qué",
+    do: "Acción recomendada",
+    evidence: "Evidencia",
+    expand: "Ver detalles",
+    no_results: "Ninguna alerta coincide con los filtros",
+    loading: "Cargando datos…",
+
+    pane_f1_title: "F1 — Alertas de reposición",
+    pane_f1_sub: "Clientes con retraso frente a su cadencia esperada de pedido. Llama por teléfono primero.",
+    pane_f2_title: "F2 — Riesgo de cliente perdido",
+    pane_f2_sub: "Cuentas cuyo silencio supera los umbrales históricos. Se recomienda visita en persona.",
+    pane_f3_title: "F3 — Oportunidades de captación",
+    pane_f3_sub: "Cuentas con demanda no captada basada en potencial vs. valor observado. Abre con un argumento de upsell o prospección.",
+
+    footer: "Inibsa Smart Demand Signals · Prototipo de dashboard · Datos actualizados",
+
+    status_Pending: "Pendiente",
+    status_Contacted: "Contactado",
+    status_Resolved: "Resuelto",
+
+    conf_high: "alta",
+    conf_medium: "media",
+    conf_low: "baja",
+
+    ev: {
+      days_since_last_purchase: "Días desde último pedido",
+      expected_interval: "Intervalo esperado (d)",
+      delay: "Retraso (d)",
+      seasonal_time_score: "Score temporal estacional",
+      reorder_probability: "Probabilidad de recompra",
+      replenishment_score: "Score de reposición",
+      method: "Método",
+      lost_status: "Estado de pérdida",
+      silence_score: "Score de silencio",
+      threshold_used: "Umbral",
+      volume_drop_ratio: "Caída de volumen",
+      frequency_drop_ratio: "Caída de frecuencia",
+      hist_avg_monthly_value: "Histórico medio / mes",
+      recent_avg_monthly_value: "Reciente medio / mes",
+      opportunity_type: "Tipo de oportunidad",
+      is_cold_start: "Cold start",
+      potential_value: "Valor potencial (EUR)",
+      observed_value_12m: "Observado 12m (EUR)",
+      utilization_ratio: "Utilización",
+      potential_gap: "Gap (EUR)",
+      capture_window_flag: "Ventana de captación",
+      lost_status_f2: "Estado F2",
+    },
+  },
+};
+
+window.MONTHS = {
+  en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  es: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+};
+window.MONTHS_FULL = {
+  en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+  es: ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'],
+};
+window.WEEKDAYS = {
+  en: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+  es: ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'],
+};
+</script>
+<script>(() => {
+  'use strict';
+
+  const qs  = (sel, el = document) => el.querySelector(sel);
+  const qsa = (sel, el = document) => [...el.querySelectorAll(sel)];
+  const $ = qs, $$ = qsa;
+
+  // ----- State -----
+  const state = {
+    lang: localStorage.getItem('inibsa.lang') || 'en',
+    tab: 'overview',
+    top: null,           // top_actions data
+    all: null,           // all alerts data
+    statuses: JSON.parse(localStorage.getItem('inibsa.statuses') || '{}'),
+    filters: { F1: defaultFilters(), F2: defaultFilters(), F3: defaultFilters() },
+  };
+  function defaultFilters() {
+    return { province: 'ALL', priority: 'ALL', subtype: 'ALL', status: 'ALL', q: '' };
+  }
+
+  const STATUS_CYCLE = ['Pending', 'Contacted', 'Resolved'];
+
+  // ----- i18n helpers -----
+  function t(key) {
+    const dict = window.I18N[state.lang] || window.I18N.en;
+    return dict[key] != null ? dict[key] : key;
+  }
+  function tEv(key) {
+    const ev = (window.I18N[state.lang] && window.I18N[state.lang].ev) || {};
+    return ev[key] || key.replace(/_/g, ' ');
+  }
+  function applyI18N() {
+    $$('[data-i]').forEach(el => {
+      const k = el.dataset.i;
+      const v = t(k);
+      if (v != null) el.textContent = v;
+    });
+  }
+
+  // ----- Number / value formatting -----
+  const nfmt = (lang) => new Intl.NumberFormat(lang === 'es' ? 'es-ES' : 'en-US');
+  const cfmt = (lang) => new Intl.NumberFormat(lang === 'es' ? 'es-ES' : 'en-US', { maximumFractionDigits: 0 });
+  function fmtNum(v) {
+    if (v == null || Number.isNaN(v)) return '—';
+    return nfmt(state.lang).format(v);
+  }
+  function fmtFloat(v, dp = 2) {
+    if (v == null || Number.isNaN(v)) return '—';
+    return new Intl.NumberFormat(state.lang === 'es' ? 'es-ES' : 'en-US', {
+      minimumFractionDigits: dp, maximumFractionDigits: dp,
+    }).format(v);
+  }
+  function fmtEUR(v) {
+    if (v == null || Number.isNaN(v)) return '—';
+    if (Math.abs(v) >= 1e6) return cfmt(state.lang).format(v / 1e6) + 'M €';
+    if (Math.abs(v) >= 1e3) return cfmt(state.lang).format(v / 1e3) + 'k €';
+    return cfmt(state.lang).format(v) + ' €';
+  }
+  function fmtEvidenceValue(key, v) {
+    if (v == null) return '—';
+    if (typeof v === 'boolean') return v ? '✓' : '—';
+    if (typeof v === 'string') return v;
+    if (typeof v !== 'number') return String(v);
+    if (key === 'utilization_ratio' || key === 'volume_drop_ratio' || key === 'frequency_drop_ratio' || key === 'reorder_probability') {
+      return (v * 100).toFixed(1) + '%';
+    }
+    if (key === 'potential_value' || key === 'observed_value_12m' || key === 'potential_gap' || key === 'hist_avg_monthly_value' || key === 'recent_avg_monthly_value') {
+      return fmtEUR(v);
+    }
+    if (key === 'days_since_last_purchase' || key === 'expected_interval' || key === 'delay' || key === 'threshold_used') {
+      return fmtFloat(v, key === 'days_since_last_purchase' ? 0 : 1);
+    }
+    if (Math.abs(v) >= 100) return fmtFloat(v, 2);
+    return fmtFloat(v, 3);
+  }
+
+  // ----- Date header -----
+  function renderDates(scoringDate) {
+    const d = scoringDate ? new Date(scoringDate + 'T00:00:00') : new Date();
+    const wd = window.WEEKDAYS[state.lang][d.getDay()];
+    const mo = window.MONTHS_FULL[state.lang][d.getMonth()];
+    const dayLong = state.lang === 'es'
+      ? `${cap(wd)}, ${d.getDate()} de ${mo} de ${d.getFullYear()}`
+      : `${cap(wd)}, ${mo} ${d.getDate()}, ${d.getFullYear()}`;
+    $('#dateLong').textContent = dayLong;
+    $('#dateScoring').textContent = (state.lang === 'es' ? 'Fecha de scoring · ' : 'Scoring date · ') + scoringDate;
+    $('#footerDate').textContent = ' ' + scoringDate;
+  }
+  const cap = (s) => s ? s[0].toUpperCase() + s.slice(1) : s;
+
+  // ----- Top 5 cards -----
+  function renderTop5() {
+    const root = $('#topActions');
+    if (!state.top || !state.top.actions) return;
+    root.innerHTML = state.top.actions.map((a, i) => topCard(a, i)).join('');
+    // wire click
+    $$('.action-card', root).forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.status-pill')) return;
+        card.classList.toggle('open');
+      });
+    });
+    $$('.status-pill', root).forEach(pill => pill.addEventListener('click', onStatusClick));
+  }
+  function topCard(a, i) {
+    const ex  = a.explanation || {};
+    const sumKey = state.lang === 'es' ? 'summary_es' : 'summary_en';
+    const recKey = state.lang === 'es' ? 'recommendation_es' : 'recommendation_en';
+    const summary = ex[sumKey] || ex.summary_en || '';
+    const recommendation = ex[recKey] || ex.recommendation_en || '';
+    const status = state.statuses[a.alert_id] || a.status || 'Pending';
+    const priCls = priorityCls(a.priority_level);
+
+    return `
+      <article class="action-card card mod-${a.module} p-4 flex flex-col gap-3" data-id="${a.alert_id}">
+        <header class="flex items-start justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="rank text-[11px] font-mono font-semibold w-6 h-6 rounded-md flex items-center justify-center"
+                  style="background:var(--mod-soft); color:var(--mod);">#${i + 1}</span>
+            <span class="mod-badge"><span class="square"></span>${a.module}</span>
+            <span class="pri ${priCls}">${a.priority_level}</span>
+          </div>
+          <svg class="chev w-4 h-4 text-inibsa-mute shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </header>
+
+        <div>
+          <div class="text-[11px] text-inibsa-mute font-medium uppercase tracking-wider">${escapeHTML(a.product_family_biz || '—')} · ${escapeHTML(a.province || '—')}</div>
+          <div class="text-[15px] font-bold mt-0.5 leading-tight">
+            <span class="text-inibsa-mute font-medium">${state.lang === 'es' ? 'Cliente' : 'Client'}</span>
+            <span class="font-mono ml-1">${escapeHTML(a.client_id)}</span>
+          </div>
+          <div class="text-[11.5px] text-inibsa-mute mt-0.5">${escapeHTML(a.sub_type)} · <span class="conf conf-${a.confidence_level}">${escapeHTML(t('conf_' + a.confidence_level) || a.confidence_level)}</span></div>
+        </div>
+
+        <p class="text-[12.5px] leading-snug text-inibsa-ink/85" style="text-wrap:pretty">${escapeHTML(summary)}</p>
+
+        <div class="action-body">
+          <div class="border-t border-inibsa-line pt-3 mt-1 space-y-3">
+            <div>
+              <div class="text-[10.5px] font-bold uppercase tracking-wider text-inibsa-mute mb-1.5 flex items-center gap-1.5">
+                <span class="w-1 h-1 rounded-full" style="background:var(--mod)"></span>${t('do')}
+              </div>
+              <p class="text-[12.5px] leading-snug">${escapeHTML(recommendation)}</p>
+            </div>
+            <div>
+              <div class="text-[10.5px] font-bold uppercase tracking-wider text-inibsa-mute mb-1.5 flex items-center gap-1.5">
+                <span class="w-1 h-1 rounded-full" style="background:var(--mod)"></span>${t('evidence')}
+              </div>
+              <div class="grid grid-cols-2 gap-x-3 gap-y-1.5">${evidenceItems(a.evidence)}</div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="mt-auto flex items-center justify-between pt-2 border-t border-inibsa-line">
+          <div class="flex items-center gap-1.5 text-[11px] text-inibsa-mute">
+            <span class="font-mono">${a.alert_id}</span>
+            <span>·</span>
+            <span class="flex items-center gap-1">
+              <span class="w-10 score-bar inline-block"><span class="score-fill block" style="width:${(a.unified_score * 100).toFixed(0)}%"></span></span>
+              <span class="font-mono tabular-nums">${a.unified_score.toFixed(2)}</span>
+            </span>
+          </div>
+          ${statusPill(a.alert_id, status)}
+        </footer>
+      </article>
+    `;
+  }
+
+  function evidenceItems(ev) {
+    if (!ev) return '';
+    const entries = Object.entries(ev).filter(([_, v]) => v !== null && v !== undefined);
+    return entries.map(([k, v]) => `
+      <div class="min-w-0">
+        <div class="text-[10px] uppercase tracking-wider text-inibsa-mute font-semibold truncate">${escapeHTML(tEv(k))}</div>
+        <div class="text-[12px] font-mono truncate" title="${escapeHTML(String(v))}">${escapeHTML(fmtEvidenceValue(k, v))}</div>
+      </div>
+    `).join('');
+  }
+
+  function priorityCls(p) {
+    if (!p) return 'pri-P4';
+    if (p.startsWith('P1')) return 'pri-P1';
+    if (p.startsWith('P2')) return 'pri-P2';
+    if (p.startsWith('P3')) return 'pri-P3';
+    return 'pri-P4';
+  }
+
+  function statusPill(id, status) {
+    const cls = `status-${status}`;
+    const lbl = t('status_' + status) || status;
+    return `<button class="status-pill ${cls}" data-id="${id}" title="${state.lang === 'es' ? 'Click para cambiar estado' : 'Click to cycle status'}"><span class="dot"></span>${escapeHTML(lbl)}</button>`;
+  }
+  function onStatusClick(e) {
+    e.stopPropagation();
+    const btn = e.currentTarget;
+    const id = btn.dataset.id;
+    const cur = state.statuses[id] || 'Pending';
+    const nxt = STATUS_CYCLE[(STATUS_CYCLE.indexOf(cur) + 1) % STATUS_CYCLE.length];
+    state.statuses[id] = nxt;
+    localStorage.setItem('inibsa.statuses', JSON.stringify(state.statuses));
+    const newPill = document.createRange().createContextualFragment(statusPill(id, nxt));
+    btn.replaceWith(newPill.firstElementChild);
+    $$('.status-pill[data-id="' + id + '"]').forEach(p => {
+      p.addEventListener('click', onStatusClick);
+    });
+  }
+
+  // ----- Overview KPIs / charts / map -----
+  function renderOverview() {
+    if (!state.all) return;
+    const alerts = state.all.alerts;
+    const total = state.all.n_total || alerts.length;
+    const byMod = group(alerts, 'module');
+    const p1 = alerts.filter(a => a.priority_level && a.priority_level.startsWith('P1')).length;
+    const provs = new Set(alerts.map(a => a.province).filter(Boolean));
+    const potential = alerts
+      .filter(a => a.module === 'F3' && a.evidence && typeof a.evidence.potential_gap === 'number')
+      .reduce((s, a) => s + a.evidence.potential_gap, 0);
+
+    $('#kpi_total').textContent = fmtNum(total);
+    $('#kpi_p1').textContent    = fmtNum(p1);
+    $('#kpi_prov').textContent  = fmtNum(provs.size);
+    $('#kpi_pot').textContent   = fmtEUR(potential);
+
+    // Module breakdown bar (use n_total proportions if available — but we only have sample counts in by-module, use sample)
+    const modCounts = { F1: (byMod.F1 || []).length, F2: (byMod.F2 || []).length, F3: (byMod.F3 || []).length };
+    const sum = modCounts.F1 + modCounts.F2 + modCounts.F3 || 1;
+    ['F1','F2','F3'].forEach(m => {
+      $('#bar-' + m).style.width = (modCounts[m] / sum * 100).toFixed(1) + '%';
+    });
+    $('#cnt-F1').textContent = fmtNum(modCounts.F1);
+    $('#cnt-F2').textContent = fmtNum(modCounts.F2);
+    $('#cnt-F3').textContent = fmtNum(modCounts.F3);
+    // Tab counts
+    $$('[data-count]').forEach(el => {
+      const m = el.dataset.count;
+      el.textContent = fmtNum(modCounts[m]);
+    });
+    // Sub stats
+    $('#p1-F1').textContent = fmtNum((byMod.F1 || []).filter(a => a.priority_level.startsWith('P1')).length);
+    $('#ll-F2').textContent = fmtNum((byMod.F2 || []).filter(a => a.sub_type === 'Likely Lost').length);
+    $('#na-F3').textContent = fmtNum((byMod.F3 || []).filter(a => a.sub_type === 'New Account Opportunity').length);
+
+    renderFamilyChart(alerts);
+    renderMap(alerts);
+  }
+
+  function group(arr, key) {
+    const m = {};
+    for (const x of arr) { const k = x[key]; (m[k] = m[k] || []).push(x); }
+    return m;
+  }
+
+  function renderFamilyChart(alerts) {
+    // Top 6 product families by alert volume, stacked by module
+    const fams = group(alerts.filter(a => a.product_family_biz), 'product_family_biz');
+    const sorted = Object.entries(fams)
+      .map(([k, v]) => ({ name: k, n: v.length, F1: v.filter(a=>a.module==='F1').length, F2: v.filter(a=>a.module==='F2').length, F3: v.filter(a=>a.module==='F3').length }))
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 6)
+      .reverse();
+
+    const labels = sorted.map(f => f.name);
+    const traces = [
+      { name: 'F1', x: sorted.map(f=>f.F1), y: labels, type: 'bar', orientation: 'h', marker: { color: '#479DDE' }, hovertemplate: '<b>%{y}</b><br>F1: %{x}<extra></extra>' },
+      { name: 'F2', x: sorted.map(f=>f.F2), y: labels, type: 'bar', orientation: 'h', marker: { color: '#E95344' }, hovertemplate: '<b>%{y}</b><br>F2: %{x}<extra></extra>' },
+      { name: 'F3', x: sorted.map(f=>f.F3), y: labels, type: 'bar', orientation: 'h', marker: { color: '#7C5CE6' }, hovertemplate: '<b>%{y}</b><br>F3: %{x}<extra></extra>' },
+    ];
+    const layout = {
+      barmode: 'stack',
+      margin: { l: 110, r: 16, t: 8, b: 26 },
+      paper_bgcolor: 'transparent',
+      plot_bgcolor: 'transparent',
+      font: { family: 'Inter, sans-serif', size: 11, color: '#0F1B2D' },
+      xaxis: { gridcolor: '#EEF1F6', zeroline: false, tickfont: { size: 10, color: '#6B7A90' } },
+      yaxis: { gridcolor: 'transparent', tickfont: { size: 11.5, color: '#0F1B2D' } },
+      legend: { orientation: 'h', x: 0, y: 1.16, font: { size: 10.5 }, bgcolor: 'transparent' },
+      showlegend: true,
+    };
+    Plotly.newPlot('familyChart', traces, layout, { displayModeBar: false, responsive: true });
+  }
+
+  function renderMap(alerts) {
+    const cents = window.PROVINCE_CENTROIDS;
+    const counts = {};
+    for (const a of alerts) {
+      if (a.province && cents[a.province]) counts[a.province] = (counts[a.province] || 0) + 1;
+    }
+    const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    if (entries.length === 0) { $('#mapPlot').innerHTML = ''; return; }
+    const lons = entries.map(([n]) => cents[n][1]);
+    const lats = entries.map(([n]) => cents[n][0]);
+    const cnts = entries.map(([,c]) => c);
+    const max  = Math.max(...cnts);
+
+    const sizes = cnts.map(v => 8 + (v / max) * 38);
+
+    const halo = {
+      type: 'scattergeo',
+      lon: lons, lat: lats,
+      marker: { size: sizes.map(s => s * 1.9), color: 'rgba(233,83,68,0.10)', line: { width: 0 }, sizemode: 'area' },
+      hoverinfo: 'skip', showlegend: false,
+    };
+    const main = {
+      type: 'scattergeo',
+      lon: lons, lat: lats,
+      text: entries.map(([n,c]) => `${n}|${c}`),
+      customdata: entries.map(([n,c]) => [n, c]),
+      hovertemplate: '<b>%{customdata[0]}</b><br>' + (state.lang === 'es' ? 'Alertas activas' : 'Active alerts') + ': <b>%{customdata[1]}</b><extra></extra>',
+      marker: {
+        size: sizes,
+        color: cnts,
+        colorscale: [[0, '#DCEAFA'], [0.4, '#F4A89F'], [1, '#E95344']],
+        cmin: 0,
+        cmax: max,
+        line: { color: '#FFFFFF', width: 1.5 },
+        sizemode: 'area',
+        showscale: false,
+      },
+      showlegend: false,
+    };
+
+    const layout = {
+      geo: {
+        scope: 'europe',
+        resolution: 50,
+        showframe: false,
+        showcoastlines: true,
+        coastlinecolor: '#D6DBE4',
+        coastlinewidth: 0.6,
+        showland: true,
+        landcolor: '#F4F6FA',
+        showocean: true,
+        oceancolor: '#FAFBFD',
+        showcountries: true,
+        countrycolor: '#D6DBE4',
+        countrywidth: 0.6,
+        showsubunits: true,
+        subunitcolor: '#E6EAF1',
+        projection: { type: 'mercator' },
+        lonaxis: { range: [-10.5, 5] },
+        lataxis: { range: [35.0, 44.5] },
+        bgcolor: 'rgba(0,0,0,0)',
+      },
+      margin: { l: 0, r: 0, t: 0, b: 0 },
+      paper_bgcolor: 'transparent',
+      showlegend: false,
+    };
+
+    Plotly.newPlot('mapPlot', [halo, main], layout, { displayModeBar: false, responsive: true });
+  }
+
+  // ----- Module panes (F1/F2/F3) -----
+  function renderModulePane(mod) {
+    const root = document.querySelector(`[data-pane="${mod}"]`);
+    if (!root) return;
+    const all = state.all.alerts.filter(a => a.module === mod);
+
+    const f = state.filters[mod];
+    const provinces = uniqSorted(all.map(a => a.province).filter(Boolean));
+    const subtypes  = uniqSorted(all.map(a => a.sub_type).filter(Boolean));
+
+    root.innerHTML = `
+      <div class="p-5 border-b border-inibsa-line">
+        <div class="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h3 class="text-[15px] font-bold tracking-tight" data-i="pane_${mod.toLowerCase()}_title">${t('pane_' + mod.toLowerCase() + '_title')}</h3>
+            <p class="text-[12px] text-inibsa-mute mt-1" data-i="pane_${mod.toLowerCase()}_sub">${t('pane_' + mod.toLowerCase() + '_sub')}</p>
+          </div>
+          <div class="text-right">
+            <div class="text-[28px] font-bold tabular-nums leading-none" style="color:var(--mod)">${fmtNum(all.length)}</div>
+            <div class="text-[11px] text-inibsa-mute mt-0.5"><span data-i="n_results">${t('n_results')}</span></div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+          <div class="flex items-center gap-1.5">
+            <label class="text-[11px] font-semibold uppercase tracking-wider text-inibsa-mute" data-i="flt_priority">${t('flt_priority')}</label>
+            <select class="flt" data-flt="priority">
+              <option value="ALL">${t('flt_all')}</option>
+              <option value="P1">P1 Critical</option>
+              <option value="P2">P2 High</option>
+              <option value="P3">P3 Medium</option>
+              <option value="P4">P4 Low</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <label class="text-[11px] font-semibold uppercase tracking-wider text-inibsa-mute" data-i="flt_province">${t('flt_province')}</label>
+            <select class="flt" data-flt="province">
+              <option value="ALL">${t('flt_all')}</option>
+              ${provinces.map(p => `<option value="${escapeAttr(p)}">${escapeHTML(p)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <label class="text-[11px] font-semibold uppercase tracking-wider text-inibsa-mute" data-i="flt_subtype">${t('flt_subtype')}</label>
+            <select class="flt" data-flt="subtype">
+              <option value="ALL">${t('flt_all')}</option>
+              ${subtypes.map(p => `<option value="${escapeAttr(p)}">${escapeHTML(p)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <label class="text-[11px] font-semibold uppercase tracking-wider text-inibsa-mute" data-i="flt_status">${t('flt_status')}</label>
+            <select class="flt" data-flt="status">
+              <option value="ALL">${t('flt_all')}</option>
+              <option value="Pending">${t('status_Pending')}</option>
+              <option value="Contacted">${t('status_Contacted')}</option>
+              <option value="Resolved">${t('status_Resolved')}</option>
+            </select>
+          </div>
+          <input class="flt" data-flt="q" placeholder="${t('flt_search')}" style="min-width:180px; padding-right:10px; background-image:none;">
+          <button class="filter-chip" data-flt-reset>${t('flt_reset')}</button>
+          <span class="ml-auto text-[11px] text-inibsa-mute"><span data-result-count>0</span> <span data-i="n_results">${t('n_results')}</span></span>
+        </div>
+      </div>
+
+      <div class="overflow-auto" style="max-height: 760px;">
+        <table class="alerts" data-tbl>
+          <thead>
+            <tr>
+              <th style="width:42px;" data-i="th_rank">#</th>
+              <th data-i="th_alert">Alert</th>
+              <th data-i="th_client">Client</th>
+              <th data-i="th_family">Family</th>
+              <th data-i="th_province">Province</th>
+              <th data-i="th_priority">Priority</th>
+              <th data-i="th_score">Score</th>
+              <th data-i="th_evidence">Evidence</th>
+              <th data-i="th_confidence">Conf.</th>
+              <th data-i="th_status">Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div data-empty class="hidden p-12 text-center text-inibsa-mute text-[13px]">${t('no_results')}</div>
+      </div>
+    `;
+
+    // Wire filters
+    $$('select.flt, input.flt', root).forEach(el => {
+      el.value = f[el.dataset.flt] === 'ALL' ? 'ALL' : f[el.dataset.flt];
+      el.addEventListener('input', () => {
+        f[el.dataset.flt] = el.value;
+        applyFilters(mod);
+      });
+    });
+    $('[data-flt-reset]', root).addEventListener('click', () => {
+      Object.assign(f, defaultFilters());
+      $$('select.flt, input.flt', root).forEach(el => { el.value = el.tagName === 'INPUT' ? '' : 'ALL'; });
+      applyFilters(mod);
+    });
+
+    applyFilters(mod);
+  }
+
+  function applyFilters(mod) {
+    const root = document.querySelector(`[data-pane="${mod}"]`);
+    const f = state.filters[mod];
+    const all = state.all.alerts.filter(a => a.module === mod);
+    const q = (f.q || '').trim().toLowerCase();
+    const filtered = all.filter(a => {
+      if (f.province !== 'ALL' && a.province !== f.province) return false;
+      if (f.priority !== 'ALL' && !(a.priority_level || '').startsWith(f.priority)) return false;
+      if (f.subtype  !== 'ALL' && a.sub_type !== f.subtype) return false;
+      const st = state.statuses[a.alert_id] || a.status || 'Pending';
+      if (f.status !== 'ALL' && st !== f.status) return false;
+      if (q && !(a.client_id || '').toLowerCase().includes(q)) return false;
+      return true;
+    });
+    filtered.sort((a, b) => b.unified_score - a.unified_score);
+
+    const tbody = $('tbody', $('[data-tbl]', root));
+    const empty = $('[data-empty]', root);
+    $('[data-result-count]', root).textContent = fmtNum(filtered.length);
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+
+    const cap = filtered.slice(0, 250);
+    tbody.innerHTML = cap.map((a, i) => rowHTML(a, i)).join('');
+    if (filtered.length > cap.length) {
+      tbody.insertAdjacentHTML('beforeend', `
+        <tr><td colspan="10" class="text-center text-[11.5px] text-inibsa-mute py-3">
+          ${state.lang === 'es' ? 'Mostrando' : 'Showing'} 250 / ${fmtNum(filtered.length)} —
+          ${state.lang === 'es' ? 'afina los filtros para ver el resto' : 'narrow filters to see more'}
+        </td></tr>
+      `);
+    }
+
+    // Wire row expand & status
+    $$('tr[data-row]', tbody).forEach(tr => {
+      tr.addEventListener('click', (e) => {
+        if (e.target.closest('.status-pill')) return;
+        toggleRow(tr);
+      });
+    });
+    $$('.status-pill', tbody).forEach(p => p.addEventListener('click', onStatusClick));
+  }
+
+  function rowHTML(a, i) {
+    const status = state.statuses[a.alert_id] || a.status || 'Pending';
+    const priCls = priorityCls(a.priority_level);
+    const ev = a.evidence || {};
+    const evSnippet = evidenceSnippet(a);
+
+    return `
+      <tr data-row data-id="${a.alert_id}">
+        <td class="text-[11px] font-mono text-inibsa-mute">${i + 1}</td>
+        <td>
+          <div class="font-mono text-[12px] font-semibold">${a.alert_id}</div>
+          <div class="text-[11px] text-inibsa-mute">${escapeHTML(a.sub_type || '')}</div>
+        </td>
+        <td><span class="font-mono text-[12.5px] font-semibold">${escapeHTML(a.client_id)}</span></td>
+        <td class="text-[12px]">${escapeHTML(a.product_family_biz || '—')}</td>
+        <td class="text-[12px]">${escapeHTML(a.province || '—')}</td>
+        <td><span class="pri ${priCls}">${escapeHTML(a.priority_level)}</span></td>
+        <td>
+          <div class="flex items-center gap-2">
+            <span class="score-bar"><span class="score-fill" style="width:${(a.unified_score * 100).toFixed(0)}%"></span></span>
+            <span class="font-mono tabular-nums text-[11.5px]">${a.unified_score.toFixed(2)}</span>
+          </div>
+        </td>
+        <td class="text-[11.5px] text-inibsa-mute font-mono max-w-[230px] truncate" title="${escapeAttr(evSnippet)}">${escapeHTML(evSnippet)}</td>
+        <td><span class="conf conf-${a.confidence_level}">${escapeHTML(t('conf_' + a.confidence_level) || a.confidence_level)}</span></td>
+        <td>${statusPill(a.alert_id, status)}</td>
+      </tr>
+    `;
+  }
+
+  function evidenceSnippet(a) {
+    const ev = a.evidence || {};
+    if (a.module === 'F1') {
+      const d = ev.days_since_last_purchase, p = ev.reorder_probability;
+      const parts = [];
+      if (d != null) parts.push(`${Math.round(d)}d ${state.lang === 'es' ? 'silencio' : 'silent'}`);
+      if (p != null) parts.push(`P=${(p*100).toFixed(0)}%`);
+      return parts.join(' · ');
+    }
+    if (a.module === 'F2') {
+      const d = ev.days_since_last_purchase, s = ev.silence_score;
+      const parts = [];
+      if (d != null) parts.push(`${Math.round(d)}d`);
+      if (s != null) parts.push(`silence=${s.toFixed(1)}`);
+      if (ev.lost_status) parts.push(ev.lost_status);
+      return parts.join(' · ');
+    }
+    if (a.module === 'F3') {
+      const g = ev.potential_gap, u = ev.utilization_ratio;
+      const parts = [];
+      if (g != null) parts.push(`gap ${fmtEUR(g)}`);
+      if (u != null) parts.push(`util ${(u*100).toFixed(1)}%`);
+      if (ev.capture_window_flag) parts.push(ev.capture_window_flag);
+      return parts.join(' · ');
+    }
+    return '';
+  }
+
+  function toggleRow(tr) {
+    const next = tr.nextElementSibling;
+    if (next && next.dataset.evRow === '1') {
+      next.remove();
+      tr.classList.remove('expanded');
+      return;
+    }
+    // close any other expanded
+    const tbody = tr.parentElement;
+    $$('tr[data-ev-row="1"]', tbody).forEach(r => r.remove());
+    $$('tr.expanded', tbody).forEach(r => r.classList.remove('expanded'));
+
+    const id = tr.dataset.id;
+    const a = state.all.alerts.find(x => x.alert_id === id);
+    if (!a) return;
+    tr.classList.add('expanded');
+    const evHTML = `
+      <tr data-ev-row="1">
+        <td class="ev-cell" colspan="10">
+          <div class="evidence-grid">
+            ${Object.entries(a.evidence || {}).filter(([_,v]) => v !== null).map(([k, v]) => `
+              <div>
+                <div class="k">${escapeHTML(tEv(k))}</div>
+                <div class="v">${escapeHTML(fmtEvidenceValue(k, v))}</div>
+              </div>
+            `).join('')}
+            ${a.linked_signals && a.linked_signals.length ? `
+              <div style="grid-column: 1/-1;">
+                <div class="k">${state.lang === 'es' ? 'Señales vinculadas' : 'Linked signals'}</div>
+                <div class="v">${a.linked_signals.map(s => escapeHTML(JSON.stringify(s))).join(', ')}</div>
+              </div>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    tr.insertAdjacentHTML('afterend', evHTML);
+  }
+
+  // ----- Tabs -----
+  function setTab(tab) {
+    state.tab = tab;
+    $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    $$('.pane').forEach(p => p.classList.toggle('hidden', p.dataset.pane !== tab));
+    if (tab !== 'overview' && state.all) {
+      renderModulePane(tab);
+    }
+  }
+
+  // ----- Lang switching -----
+  function setLang(lang) {
+    state.lang = lang;
+    localStorage.setItem('inibsa.lang', lang);
+    document.documentElement.lang = lang;
+    $$('#langToggle button').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+    applyI18N();
+    renderDates(state.scoringDate);
+    renderTop5();
+    renderOverview();
+    if (state.tab !== 'overview') renderModulePane(state.tab);
+  }
+
+  // ----- Helpers -----
+  function uniqSorted(arr) {
+    return [...new Set(arr)].sort((a, b) => String(a).localeCompare(String(b)));
+  }
+  function escapeHTML(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+  function escapeAttr(s) { return escapeHTML(s); }
+
+  // ----- Boot -----
+  async function boot() {
+    document.documentElement.lang = state.lang;
+    $$('#langToggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.lang === state.lang);
+      b.addEventListener('click', () => setLang(b.dataset.lang));
+    });
+    $$('.tab-btn').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+    applyI18N();
+
+    try {
+      const [topR, allR] = await Promise.all([
+        fetch('data/top_actions.json').then(r => r.json()),
+        fetch('data/all_alerts.json').then(r => r.json()),
+      ]);
+      state.top = topR;
+      state.all = allR;
+      state.scoringDate = topR.scoring_date || allR.scoring_date;
+      renderDates(state.scoringDate);
+      renderTop5();
+      renderOverview();
+    } catch (err) {
+      console.error('Failed to load data', err);
+      $('#topActions').innerHTML = `
+        <div class="col-span-full p-8 text-center text-inibsa-mute text-[13px]">
+          ${state.lang === 'es' ? 'Error al cargar datos' : 'Failed to load data'}: ${escapeHTML(String(err))}
+        </div>`;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', boot);
+})();
+</script>
+</body>
+</html>
