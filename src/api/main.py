@@ -12,6 +12,7 @@ from .data_loader import load_all_data
 from .routers.actions import router as actions_router
 from .routers.alerts import router as alerts_router
 from .routers.clients import router as clients_router
+from .routers.explain import router as explain_router
 from .routers.map import router as map_router
 from .routers.overview import router as overview_router
 
@@ -38,6 +39,7 @@ async def startup() -> None:
 
 app.include_router(overview_router, prefix="/api")
 app.include_router(alerts_router, prefix="/api")
+app.include_router(explain_router, prefix="/api")
 app.include_router(actions_router, prefix="/api")
 app.include_router(map_router, prefix="/api")
 app.include_router(clients_router, prefix="/api")

@@ -743,6 +743,7 @@ window.WEEKDAYS = {
     top: null,           // top_actions data
     all: null,           // all alerts data
     statuses: JSON.parse(localStorage.getItem('inibsa.statuses') || '{}'),
+    explanations: {},
     filters: { F1: defaultFilters(), F2: defaultFilters(), F3: defaultFilters() },
   };
   function defaultFilters() {
@@ -919,12 +920,14 @@ window.WEEKDAYS = {
         </header>
 
         <div>
-          <div class="text-[11px] text-inibsa-mute font-medium uppercase tracking-wider">${escapeHTML(a.product_family_biz || '—')} · ${escapeHTML(a.province || '—')}</div>
-          <div class="text-[15px] font-bold mt-0.5 leading-tight">
-            <span class="text-inibsa-mute font-medium">${state.lang === 'es' ? 'Cliente' : 'Client'}</span>
-            <span class="font-mono ml-1">${escapeHTML(a.client_id)}</span>
+          <div class="text-[11px] text-inibsa-mute font-medium uppercase tracking-wider">${escapeHTML(a.product_family_biz || a.product_family || '—')}</div>
+          <div class="text-[15px] font-bold mt-0.5 leading-tight truncate">
+            ${escapeHTML(a.client_label || (a.province ? a.province + ' · Dental' : 'Dental Clinic'))}
           </div>
-          <div class="text-[11.5px] text-inibsa-mute mt-0.5">${escapeHTML(a.sub_type)} · <span class="conf conf-${a.confidence_level}">${escapeHTML(t('conf_' + a.confidence_level) || a.confidence_level)}</span></div>
+          <div class="text-[11.5px] text-inibsa-mute mt-0.5 font-mono">
+            ${escapeHTML(a.client_sub || ('#' + a.client_id))}
+          </div>
+          <div class="text-[11.5px] text-inibsa-mute mt-1">${escapeHTML(a.sub_type)} · <span class="conf conf-${a.confidence_level}">${escapeHTML(t('conf_' + a.confidence_level) || a.confidence_level)}</span></div>
         </div>
 
         <p class="text-[12.5px] leading-snug text-inibsa-ink/85" style="text-wrap:pretty">${escapeHTML(summary)}</p>
@@ -1011,6 +1014,69 @@ window.WEEKDAYS = {
       }).catch(err => console.warn('[API] status PATCH failed:', err.message));
     }
   }
+
+  // ── On-demand AI Explanation ────────────────────────────────────────────
+  async function explainAlert(alertId) {
+    const btn      = document.querySelector(`.explain-btn[data-id="${alertId}"]`);
+    const resultEl = document.getElementById(`explain-${alertId}`);
+    if (!btn || !resultEl) return;
+
+    if (state.explanations[alertId]) {
+      renderExplanationCard(alertId, resultEl);
+      btn.style.display = 'none';
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = state.lang === 'es' ? '⏳ Generando...' : '⏳ Generating...';
+    resultEl.innerHTML = '';
+
+    try {
+      const r = await fetch(
+        API_BASE + `/api/alerts/${encodeURIComponent(alertId)}/explain`,
+        { method: 'POST', signal: AbortSignal.timeout(30000) }
+      );
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({ detail: r.statusText }));
+        throw new Error(err.detail || `HTTP ${r.status}`);
+      }
+      const data = await r.json();
+      state.explanations[alertId] = data.explanation;
+      renderExplanationCard(alertId, resultEl);
+      btn.style.display = 'none';
+    } catch (err) {
+      btn.disabled    = false;
+      btn.textContent = state.lang === 'es' ? '⚠ Reintentar' : '⚠ Retry';
+      resultEl.innerHTML = `<p class="text-[11.5px] text-red-500 mt-2">
+        ${state.lang === 'es' ? 'Error al generar:' : 'Failed to generate:'} ${escapeHTML(String(err.message))}
+      </p>`;
+    }
+  }
+
+  function renderExplanationCard(alertId, containerEl) {
+    const ex = state.explanations[alertId];
+    if (!ex) return;
+    const lang    = state.lang;
+    const summary = lang === 'es' ? ex.summary_es : ex.summary_en;
+    const rec     = lang === 'es' ? ex.recommendation_es : ex.recommendation_en;
+    containerEl.innerHTML = `
+      <div class="mt-3 rounded-xl border border-inibsa-blue/20 bg-blue-50/40 p-3 space-y-2">
+        <div class="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider text-inibsa-blue">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          ${lang === 'es' ? 'Análisis IA' : 'AI Analysis'}
+        </div>
+        <p class="text-[12.5px] leading-snug text-inibsa-ink">${escapeHTML(summary || '')}</p>
+        <div class="border-t border-inibsa-blue/15 pt-2">
+          <div class="text-[10.5px] font-bold uppercase tracking-wider text-inibsa-blue mb-1">
+            ${lang === 'es' ? 'Acción recomendada' : 'Recommended action'}
+          </div>
+          <p class="text-[12.5px] leading-snug text-inibsa-ink">${escapeHTML(rec || '')}</p>
+        </div>
+      </div>`;
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   // ----- Overview KPIs / charts / map -----
   function renderOverview() {
@@ -1317,7 +1383,10 @@ window.WEEKDAYS = {
       if (f.subtype  !== 'ALL' && a.sub_type !== f.subtype) return false;
       const st = state.statuses[a.alert_id] || a.status || 'Pending';
       if (f.status !== 'ALL' && st !== f.status) return false;
-      if (q && !(a.client_id || '').toLowerCase().includes(q)) return false;
+      if (q) {
+        const searchTarget = [a.client_id || '', a.client_label || '', a.province || ''].join(' ').toLowerCase();
+        if (!searchTarget.includes(q)) return false;
+      }
       return true;
     });
     filtered.sort((a, b) => b.unified_score - a.unified_score);
@@ -1367,8 +1436,15 @@ window.WEEKDAYS = {
           <div class="font-mono text-[12px] font-semibold">${a.alert_id}</div>
           <div class="text-[11px] text-inibsa-mute">${escapeHTML(a.sub_type || '')}</div>
         </td>
-        <td><span class="font-mono text-[12.5px] font-semibold">${escapeHTML(a.client_id)}</span></td>
-        <td class="text-[12px]">${escapeHTML(a.product_family_biz || '—')}</td>
+        <td>
+          <div class="text-[13px] font-semibold leading-tight">
+            ${escapeHTML(a.client_label || (a.province ? a.province + ' · Dental' : 'Dental Clinic'))}
+          </div>
+          <div class="text-[11px] text-inibsa-mute font-mono mt-0.5">
+            ${escapeHTML(a.client_sub || ('#' + a.client_id))}
+          </div>
+        </td>
+        <td class="text-[12px]">${escapeHTML(a.product_family_biz || a.product_family || '—')}</td>
         <td class="text-[12px]">${escapeHTML(a.province || '—')}</td>
         <td><span class="pri ${priCls}">${escapeHTML(a.priority_level)}</span></td>
         <td>
@@ -1428,6 +1504,13 @@ window.WEEKDAYS = {
     const a = state.all.alerts.find(x => x.alert_id === id);
     if (!a) return;
     tr.classList.add('expanded');
+
+    // Pre-populate state from embedded explanation if not already cached
+    if (!state.explanations[id] && (a.explanation || a.ai_explanation)) {
+      state.explanations[id] = a.explanation || a.ai_explanation;
+    }
+    const hasExisting = !!state.explanations[id];
+
     const evHTML = `
       <tr data-ev-row="1">
         <td class="ev-cell" colspan="10">
@@ -1444,9 +1527,31 @@ window.WEEKDAYS = {
                 <div class="v">${a.linked_signals.map(s => escapeHTML(JSON.stringify(s))).join(', ')}</div>
               </div>` : ''}
           </div>
+          <div class="px-7 pb-4 pt-2">
+            ${hasExisting
+              ? `<div id="explain-${id}"></div>`
+              : `<button class="explain-btn flex items-center gap-1.5 mt-1 px-3 py-1.5 rounded-lg
+                          text-[11.5px] font-semibold text-inibsa-blue
+                          border border-inibsa-blue/30 bg-blue-50/60
+                          hover:bg-blue-100/60 transition-colors"
+                         data-id="${id}">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" class="shrink-0">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                  ${state.lang === 'es' ? 'Explicar con IA' : 'Explain with AI'}
+                </button>
+                <div id="explain-${id}"></div>`
+            }
+          </div>
         </td>
       </tr>`;
     tr.insertAdjacentHTML('afterend', evHTML);
+
+    const explainBtn = document.querySelector(`.explain-btn[data-id="${id}"]`);
+    if (explainBtn) explainBtn.addEventListener('click', () => explainAlert(id));
+
+    const resultEl = document.getElementById(`explain-${id}`);
+    if (resultEl && state.explanations[id]) renderExplanationCard(id, resultEl);
   }
 
   // ----- Tabs -----

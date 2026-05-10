@@ -113,10 +113,17 @@ if f1_raw is not None:
     f1["module_score"]   = f1["f1_final_score"]
     f1["module_priority_level"] = f1["combined_priority"] if "combined_priority" in f1.columns else f1["priority_level"]
 
+    # Our method fields (GRU + baseline)
     f1_evidence_fields = [
         "days_since_last_purchase", "expected_interval", "delay",
         "seasonal_time_score", "reorder_probability", "replenishment_score",
     ]
+    # Teammate statistical fields (stat_* prefix) — merged in after TM enrichment block
+    f1_stat_fields = [
+        "stat_avg_interval_days", "stat_grading_eur", "stat_f_in_fixed",
+        "stat_n_active_products", "stat_behavioral_status", "stat_cluster",
+    ]
+    f1_evidence_fields = f1_evidence_fields + f1_stat_fields
     f1["evidence"] = f1.apply(lambda r: evidence_dict(r, f1_evidence_fields), axis=1)
 
     f1_unified = f1[[
@@ -214,8 +221,83 @@ def add_rank_pct(df):
     df["module_rank_pct"] = df["module_score"].rank(pct=True, method="average")
     return df
 
+# ── Layer 1: F1 dormancy penalty ─────────────────────────────
+LOST_MULTIPLIER     = 3.0
+LOST_FLOOR_DAYS     = 90
+LOST_HARD_CAP       = 730
+DORMANT_SCORE_SCALE = 0.10
+
+if len(f1_unified) > 0 and "evidence" in f1_unified.columns:
+    def _get_expected_interval(ev):
+        if isinstance(ev, dict):
+            v = ev.get("expected_interval")
+            try: return float(v) if v is not None else np.nan
+            except: return np.nan
+        return np.nan
+
+    f1_unified["_expected_interval"] = f1_unified["evidence"].apply(_get_expected_interval)
+    f1_unified["_days_since"] = pd.to_numeric(
+        f1_unified["evidence"].apply(
+            lambda ev: ev.get("days_since_last_purchase") if isinstance(ev, dict) else None
+        ), errors="coerce"
+    )
+    f1_unified["_lost_threshold"] = f1_unified["_expected_interval"].apply(
+        lambda ei: min(max(ei * LOST_MULTIPLIER, LOST_FLOOR_DAYS), LOST_HARD_CAP)
+        if (not pd.isna(ei) and ei > 0) else LOST_HARD_CAP
+    )
+    dormant_mask = (
+        f1_unified["_days_since"].notna() &
+        (f1_unified["_days_since"] > f1_unified["_lost_threshold"])
+    )
+    n_dormant = int(dormant_mask.sum())
+    f1_unified.loc[dormant_mask, "module_score"] *= DORMANT_SCORE_SCALE
+    f1_unified.loc[dormant_mask, "sub_type"] = "Reactivation (Dormant)"
+    for idx in f1_unified[dormant_mask].index:
+        ev = f1_unified.at[idx, "evidence"]
+        if isinstance(ev, dict):
+            ev["is_dormant"] = True
+            ev["lost_threshold_days"] = int(f1_unified.at[idx, "_lost_threshold"])
+    f1_unified.drop(columns=["_expected_interval", "_days_since", "_lost_threshold"], inplace=True)
+    print(f"  [Layer 1] F1 dormant clients capped: {n_dormant:,} (module_score ×{DORMANT_SCORE_SCALE})")
+else:
+    n_dormant = 0
+    print("  [Layer 1] F1 dormancy check skipped (no data or missing columns)")
+# ─────────────────────────────────────────────────────────────
+
 f1_unified = add_rank_pct(f1_unified)
 f2_unified = add_rank_pct(f2_unified)
+
+# ── Layer 2: F3 sub_type weighting ───────────────────────────
+F3_WEIGHTS = {
+    "New Account Opportunity":         0.65,
+    "Mild Underutilization":           0.80,
+    "Moderate Underutilization":       0.90,
+    "High Potential Underutilization": 1.00,
+}
+DEFAULT_F3_WEIGHT = 0.75
+
+if len(f3_unified) > 0 and "sub_type" in f3_unified.columns:
+    f3_weight_applied = {}
+    for opp_type, weight in F3_WEIGHTS.items():
+        mask = f3_unified["sub_type"] == opp_type
+        n = int(mask.sum())
+        if n > 0:
+            f3_unified.loc[mask, "module_score"] *= weight
+            f3_weight_applied[opp_type] = (n, weight)
+    matched_mask = f3_unified["sub_type"].isin(F3_WEIGHTS.keys())
+    n_default = int((~matched_mask).sum())
+    if n_default > 0:
+        f3_unified.loc[~matched_mask, "module_score"] *= DEFAULT_F3_WEIGHT
+    print(f"  [Layer 2] F3 weights applied:")
+    for k, (n, w) in f3_weight_applied.items():
+        print(f"    {k}: {n:,} rows × {w}")
+    if n_default > 0:
+        print(f"    (default ×{DEFAULT_F3_WEIGHT}): {n_default:,} rows")
+else:
+    n_default = 0
+    print("  [Layer 2] F3 weighting skipped (no data or missing columns)")
+# ─────────────────────────────────────────────────────────────
+
 f3_unified = add_rank_pct(f3_unified)
 
 # ─────────────────────────────────────────────────────────────
@@ -236,29 +318,62 @@ df_unified["unified_score"] = df_unified["module_rank_pct"] if len(df_unified) >
 print(f"  unified rows (before dedup): {len(df_unified):,}")
 
 # ─────────────────────────────────────────────────────────────
-# STAGE 3 — CROSS-MODULE DEDUP
+# STAGE 3 — CROSS-MODULE LINKED SIGNALS + DEDUP
 # ─────────────────────────────────────────────────────────────
-print("\n[Stage 3] Cross-module dedup …")
+print("\n[Stage 3] Cross-module linked_signals + dedup …")
+
+CROSS_MODULE_BONUS = 0.04
 
 dedup_log = []
-overlap_pair_counts = {"F1∩F2":0, "F1∩F3":0, "F2∩F3":0, "F1∩F2∩F3":0}
+overlap_pair_counts = {"F1∩F2": 0, "F1∩F3": 0, "F2∩F3": 0, "F1∩F2∩F3": 0}
 
 if len(df_unified) > 0:
-    # Capture overlap statistics before dedup
-    grp_modules = (df_unified.groupby(["client_id","product_family_biz"])["module"]
-                   .agg(lambda s: tuple(sorted(set(s)))))
-    for mods in grp_modules:
-        if len(mods) < 2: continue
-        if mods == ("F1","F2","F3"):
+    # ── Step A: (client_id, product_family_biz) → alert entries ──
+    overlap_map = {}
+    for _, row in df_unified.iterrows():
+        key = (row["client_id"], row["product_family_biz"])
+        overlap_map.setdefault(key, []).append({
+            "alert_id": row["alert_id"],
+            "module":   row["module"],
+            "score":    row["unified_score"],
+        })
+
+    # ── Step B: linked_signals + cross-module bonus ──
+    linked_signals_map = {}
+    bonus_map          = {}
+
+    for key, entries in overlap_map.items():
+        if len(entries) < 2:
+            continue
+        modules = tuple(sorted({e["module"] for e in entries}))
+        if set(modules) == {"F1", "F2", "F3"}:
             overlap_pair_counts["F1∩F2∩F3"] += 1
-        elif "F1" in mods and "F2" in mods:
+        elif set(modules) == {"F1", "F2"}:
             overlap_pair_counts["F1∩F2"] += 1
-        elif "F1" in mods and "F3" in mods:
+        elif set(modules) == {"F1", "F3"}:
             overlap_pair_counts["F1∩F3"] += 1
-        elif "F2" in mods and "F3" in mods:
+        elif set(modules) == {"F2", "F3"}:
             overlap_pair_counts["F2∩F3"] += 1
 
-    # Sort by unified_score desc, keep first per (client_id, product_family_biz)
+        for e in entries:
+            other_ids = [x["alert_id"] for x in entries if x["alert_id"] != e["alert_id"]]
+            linked_signals_map[e["alert_id"]] = other_ids
+            bonus_map[e["alert_id"]] = len(other_ids) * CROSS_MODULE_BONUS
+
+    # ── Step C: write back ──
+    df_unified["linked_signals"] = df_unified["alert_id"].map(
+        lambda aid: linked_signals_map.get(aid, [])
+    )
+    df_unified["unified_score"] = df_unified.apply(
+        lambda r: min(r["unified_score"] + bonus_map.get(r["alert_id"], 0.0), 1.05),
+        axis=1
+    )
+
+    n_with_links = int((df_unified["linked_signals"].apply(len) > 0).sum())
+    print(f"  alerts with linked_signals: {n_with_links:,}")
+    print(f"  overlap pair counts: {overlap_pair_counts}")
+
+    # ── Step D: dedup, keep highest unified_score per key ──
     n_before = len(df_unified)
     df_unified = df_unified.sort_values("unified_score", ascending=False).reset_index(drop=True)
 
@@ -268,10 +383,13 @@ if len(df_unified) > 0:
     for i, row in df_unified.iterrows():
         key = (row["client_id"], row["product_family_biz"])
         if key in seen:
-            drops.append({"client_id": row["client_id"],
-                          "product_family_biz": row["product_family_biz"],
-                          "module_dropped": row["module"],
-                          "sub_type_dropped": row["sub_type"]})
+            drops.append({
+                "client_id":           row["client_id"],
+                "product_family_biz":  row["product_family_biz"],
+                "module_dropped":      row["module"],
+                "sub_type_dropped":    row["sub_type"],
+                "linked_preserved_in": linked_signals_map.get(row["alert_id"], []),
+            })
             continue
         seen.add(key)
         keep_mask[i] = True
@@ -279,7 +397,7 @@ if len(df_unified) > 0:
     df_unified = df_unified[keep_mask].reset_index(drop=True)
     n_dedup_dropped = n_before - len(df_unified)
     dedup_log = drops
-    print(f"  dropped on dedup: {n_dedup_dropped:,}")
+    print(f"  dropped on dedup: {n_dedup_dropped:,} (alert_ids preserved in linked_signals)")
 else:
     n_dedup_dropped = 0
 
@@ -308,7 +426,8 @@ if len(df_unified) > 0:
         df_unified = df_unified.sort_values("alert_id").reset_index(drop=True)
         df_unified["rank_global"] = np.arange(1, len(df_unified)+1)
 
-    df_unified["linked_signals"] = [[] for _ in range(len(df_unified))]
+    if "linked_signals" not in df_unified.columns:
+        df_unified["linked_signals"] = [[] for _ in range(len(df_unified))]
     df_unified["status"] = "Pending"
 else:
     df_unified["rank_global"]    = []
@@ -337,7 +456,7 @@ def row_to_json(r):
         "priority_level":    r["priority_level"],
         "confidence_level":  to_jsonable(r["confidence_level"]),
         "evidence":          r["evidence"] if isinstance(r["evidence"], dict) else {},
-        "linked_signals":    [],
+        "linked_signals":    r["linked_signals"] if isinstance(r.get("linked_signals"), list) else [],
         "status":            "Pending",
     }
 
@@ -492,6 +611,14 @@ report = [
     "## Schema unification",
     f"- F1 collapsed (T1+T2 → Biomateriales) duplicates dropped: {f1_dropped_after_biz}",
     f"- F2 collapsed (T1+T2) duplicates dropped: {f2_dropped_after_biz}",
+    "",
+    "## Layer modifications applied",
+    f"- Layer 1 (F1 dormancy): LOST_MULTIPLIER={LOST_MULTIPLIER}, HARD_CAP={LOST_HARD_CAP}d, SCORE_SCALE={DORMANT_SCORE_SCALE}",
+    f"- Layer 2 (F3 weights): cold_start={F3_WEIGHTS['New Account Opportunity']}, "
+    f"mild={F3_WEIGHTS['Mild Underutilization']}, "
+    f"moderate={F3_WEIGHTS['Moderate Underutilization']}, "
+    f"high={F3_WEIGHTS['High Potential Underutilization']}",
+    f"- Layer 3 (linked_signals): CROSS_MODULE_BONUS={CROSS_MODULE_BONUS} per link",
     "",
     "## Cross-module dedup",
     f"- Rows dropped: {n_dedup_dropped:,}",

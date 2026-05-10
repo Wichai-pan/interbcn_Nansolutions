@@ -17,6 +17,18 @@ VALID_STATUSES = {"open", "in_progress", "resolved"}
 status_overrides: Dict[str, str] = {}
 
 
+def _build_client_label(province: str) -> str:
+    prov = province.strip() if province else ""
+    if not prov or prov.lower() in ("unknown", "none", ""):
+        return "Dental Clinic"
+    return f"{prov} · Dental"
+
+
+def _build_client_sub(client_id: str) -> str:
+    cid = client_id.strip() if client_id else ""
+    return f"#{cid}" if cid else ""
+
+
 def _warn(message: str) -> None:
     print(f"[api:data-loader] WARN: {message}", file=sys.stderr)
 
@@ -173,6 +185,12 @@ def _standardize_records(records: List[Dict[str, Any]], source: str) -> List[Dic
                 "alert_id": alert_id,
                 "module": module,
                 "client_id": str(_none_if_missing(row.get("client_id")) or ""),
+                "client_label": _build_client_label(
+                    province=str(_none_if_missing(row.get("province")) or ""),
+                ),
+                "client_sub": _build_client_sub(
+                    client_id=str(_none_if_missing(row.get("client_id")) or ""),
+                ),
                 "product_family": str(product_family),
                 "priority_level": str(_none_if_missing(row.get("priority_level")) or "P4 Low"),
                 "score": _score_from_row(row),

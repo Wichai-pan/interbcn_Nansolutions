@@ -19,6 +19,8 @@ class Alert(BaseModel):
     alert_id: str
     module: str
     client_id: str
+    client_label: str = ""
+    client_sub: str = ""
     product_family: str
     priority_level: str
     score: float

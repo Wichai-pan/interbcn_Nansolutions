@@ -1,5 +1,5 @@
 {
-  "scoring_date": "2026-05-09",
+  "scoring_date": "2026-05-10",
   "top_n": 5,
   "selection_params": {
     "same_module_penalty": 0.7,
@@ -7,41 +7,80 @@
   },
   "actions": [
     {
-      "alert_id": "F1-000001",
+      "alert_id": "F1-000050",
       "rank_global": 1,
-      "client_id": "1000080301",
+      "client_id": "1000082089",
       "product_family_biz": "Anestesia",
-      "province": "Pontevedra",
-      "segment_code": "36330",
+      "province": "Barcelona",
+      "segment_code": "8018",
       "module": "F1",
       "alert_type": "Replenishment",
       "sub_type": "P1 Critical",
-      "unified_score": 1.0,
-      "module_score": 0.9095860854541186,
+      "unified_score": 1.04,
+      "module_score": 0.8173054251029142,
       "module_rank_pct": 1.0,
       "priority_level": "P1 Critical",
-      "confidence_level": "low",
+      "confidence_level": "high",
       "evidence": {
-        "days_since_last_purchase": 1617,
-        "expected_interval": 145.16007596067917,
-        "delay": 1471.8399240393207,
-        "seasonal_time_score": 11.238296348286205,
-        "reorder_probability": 0.8480561971664429,
-        "replenishment_score": 10.071551595239354
+        "days_since_last_purchase": 245,
+        "expected_interval": 89.25,
+        "delay": 155.75,
+        "seasonal_time_score": 13.02826597386292,
+        "reorder_probability": 0.6650266051292419,
+        "replenishment_score": 9.871833794538357
       },
-      "linked_signals": [],
+      "linked_signals": [
+        "F3-011519"
+      ],
       "status": "Pending",
       "rank_top": 1,
-      "adjusted_score": 1.0,
+      "adjusted_score": 1.04,
       "selection_reason": {
-        "raw_score": 1.0,
-        "adjusted_score": 1.0,
+        "raw_score": 1.04,
+        "adjusted_score": 1.04,
+        "penalties_applied": []
+      }
+    },
+    {
+      "alert_id": "F3-000018",
+      "rank_global": 4,
+      "client_id": "39718",
+      "product_family_biz": "Biomateriales",
+      "province": "Málaga",
+      "segment_code": "29017",
+      "module": "F3",
+      "alert_type": "Capture Opportunity",
+      "sub_type": "High Potential Underutilization",
+      "unified_score": 1.0394339775208215,
+      "module_score": 0.7755078400565595,
+      "module_rank_pct": 0.9994339775208215,
+      "priority_level": "P1 Critical",
+      "confidence_level": "high",
+      "evidence": {
+        "opportunity_type": "High Potential Underutilization",
+        "is_cold_start": false,
+        "potential_value": 55483.8,
+        "observed_value_12m": 6151.3228,
+        "utilization_ratio": 0.11086700622523853,
+        "potential_gap": 49332.4772,
+        "capture_window_flag": "MONITOR",
+        "lost_status_f2": "Early Warning"
+      },
+      "linked_signals": [
+        "F2-002574"
+      ],
+      "status": "Pending",
+      "rank_top": 2,
+      "adjusted_score": 1.0394339775208215,
+      "selection_reason": {
+        "raw_score": 1.0394339775208215,
+        "adjusted_score": 1.0394339775208215,
         "penalties_applied": []
       }
     },
     {
       "alert_id": "F2-000001",
-      "rank_global": 2,
+      "rank_global": 327,
       "client_id": "7135",
       "product_family_biz": "Biomateriales",
       "province": "Sta.Cruz Tenerife",
@@ -67,41 +106,6 @@
       },
       "linked_signals": [],
       "status": "Pending",
-      "rank_top": 2,
-      "adjusted_score": 1.0,
-      "selection_reason": {
-        "raw_score": 1.0,
-        "adjusted_score": 1.0,
-        "penalties_applied": []
-      }
-    },
-    {
-      "alert_id": "F3-000001",
-      "rank_global": 3,
-      "client_id": "1000081536",
-      "product_family_biz": "Biomateriales",
-      "province": "Cádiz",
-      "segment_code": null,
-      "module": "F3",
-      "alert_type": "Capture Opportunity",
-      "sub_type": "New Account Opportunity",
-      "unified_score": 1.0,
-      "module_score": 0.9743014785133218,
-      "module_rank_pct": 1.0,
-      "priority_level": "P1 Critical",
-      "confidence_level": "low",
-      "evidence": {
-        "opportunity_type": "New Account Opportunity",
-        "is_cold_start": true,
-        "potential_value": 92473.0,
-        "observed_value_12m": null,
-        "utilization_ratio": 0.0,
-        "potential_gap": 92473.0,
-        "capture_window_flag": "COLD_START",
-        "lost_status_f2": null
-      },
-      "linked_signals": [],
-      "status": "Pending",
       "rank_top": 3,
       "adjusted_score": 1.0,
       "selection_reason": {
@@ -111,82 +115,86 @@
       }
     },
     {
-      "alert_id": "F3-000002",
-      "rank_global": 4,
-      "client_id": "17168",
-      "product_family_biz": "Biomateriales",
-      "province": "Málaga",
-      "segment_code": "29008",
-      "module": "F3",
-      "alert_type": "Capture Opportunity",
-      "sub_type": "High Potential Underutilization",
-      "unified_score": 0.9999191396458317,
-      "module_score": 0.958185095093937,
-      "module_rank_pct": 0.9999191396458317,
+      "alert_id": "F1-000100",
+      "rank_global": 2,
+      "client_id": "28152",
+      "product_family_biz": "Anestesia",
+      "province": "Barcelona",
+      "segment_code": "8340",
+      "module": "F1",
+      "alert_type": "Replenishment",
+      "sub_type": "P1 Critical",
+      "unified_score": 1.039781181619256,
+      "module_score": 0.7987332350576472,
+      "module_rank_pct": 0.999781181619256,
       "priority_level": "P1 Critical",
-      "confidence_level": "medium",
+      "confidence_level": "high",
       "evidence": {
-        "opportunity_type": "High Potential Underutilization",
-        "is_cold_start": false,
-        "potential_value": 110967.6,
-        "observed_value_12m": 1678.9266,
-        "utilization_ratio": 0.015129881154499014,
-        "potential_gap": 109288.6734,
-        "capture_window_flag": "FRESH_OPPORTUNITY",
-        "lost_status_f2": null
+        "days_since_last_purchase": 434,
+        "expected_interval": 212.33333333333334,
+        "delay": 221.66666666666666,
+        "seasonal_time_score": 27.42413778650721,
+        "reorder_probability": 0.6095014810562134,
+        "replenishment_score": 20.779935774265358
       },
-      "linked_signals": [],
+      "linked_signals": [
+        "F3-001721"
+      ],
       "status": "Pending",
       "rank_top": 4,
-      "adjusted_score": 0.6999433977520821,
+      "adjusted_score": 0.7278468271334791,
       "selection_reason": {
-        "raw_score": 0.9999191396458317,
-        "adjusted_score": 0.6999433977520821,
+        "raw_score": 1.039781181619256,
+        "adjusted_score": 0.7278468271334791,
         "penalties_applied": [
           {
-            "round": 3,
+            "round": 1,
             "reason": "same_module",
-            "vs_alert_id": "F3-000001",
+            "vs_alert_id": "F1-000050",
             "factor": 0.7
           }
         ]
       }
     },
     {
-      "alert_id": "F1-000002",
-      "rank_global": 7,
-      "client_id": "39452",
-      "product_family_biz": "Bioseguridad",
-      "province": "Toledo",
-      "segment_code": "45210",
-      "module": "F1",
-      "alert_type": "Replenishment",
-      "sub_type": "P1 Critical",
-      "unified_score": 0.999781181619256,
-      "module_score": 0.9064197261432589,
-      "module_rank_pct": 0.999781181619256,
+      "alert_id": "F3-000022",
+      "rank_global": 6,
+      "client_id": "6642",
+      "product_family_biz": "Biomateriales",
+      "province": "Alicante",
+      "segment_code": "3201",
+      "module": "F3",
+      "alert_type": "Capture Opportunity",
+      "sub_type": "High Potential Underutilization",
+      "unified_score": 1.0391105361041482,
+      "module_score": 0.7561898869361162,
+      "module_rank_pct": 0.9991105361041481,
       "priority_level": "P1 Critical",
       "confidence_level": "high",
       "evidence": {
-        "days_since_last_purchase": 126,
-        "expected_interval": 23.333333333333332,
-        "delay": 102.66666666666667,
-        "seasonal_time_score": 16.301088619968866,
-        "reorder_probability": 0.8382223844528198,
-        "replenishment_score": 11.428379521386605
+        "opportunity_type": "High Potential Underutilization",
+        "is_cold_start": false,
+        "potential_value": 36989.2,
+        "observed_value_12m": 925.1068,
+        "utilization_ratio": 0.025010186757214947,
+        "potential_gap": 36064.093199999996,
+        "capture_window_flag": "TRANSITIONAL",
+        "lost_status_f2": "At Risk"
       },
-      "linked_signals": [],
+      "linked_signals": [
+        "F2-002202"
+      ],
       "status": "Pending",
       "rank_top": 5,
-      "adjusted_score": 0.6998468271334791,
+      "adjusted_score": 0.7273773752729037,
       "selection_reason": {
-        "raw_score": 0.999781181619256,
-        "adjusted_score": 0.6998468271334791,
+        "raw_score": 1.0391105361041482,
+        "adjusted_score": 0.7273773752729037,
         "penalties_applied": [
           {
-            "round": 1,
+            "round": 2,
             "reason": "same_module",
-            "vs_alert_id": "F1-000001",
+            "vs_alert_id": "F3-000018",
             "factor": 0.7
           }
         ]

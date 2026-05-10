@@ -36,8 +36,7 @@ except ImportError:
 import requests
 
 API_KEY = os.getenv("GEMINI_API_KEY")
-if not API_KEY:
-    raise RuntimeError("GEMINI_API_KEY not set in environment / .env file")
+# Key check deferred to call time so the module can be imported without the key
 
 MODEL_NAME       = "gemini-2.5-flash"
 API_ENDPOINT     = (
@@ -71,15 +70,23 @@ STRICT RULES — non-negotiable:
    evidence field. If a field is null or missing, do not mention it.
 3. Never promise outcomes. Avoid "the client will buy" / "el cliente
    comprará". Use "suggests", "indicates", "sugiere", "indica".
-4. Refer to clients by their internal ID (e.g. "Client 10234"). Do NOT
-   invent client names.
+4. Refer to clients as "the dental clinic in {province}" using the province
+   field provided in the evidence. If province is missing or unknown, fall
+   back to "Client {client_id}". Do NOT invent company names.
 5. Output MUST be a single valid JSON object. No prose before or after.
    No markdown code fences. No comments.
 6. Required keys: summary_en, summary_es, recommendation_en,
    recommendation_es. No other keys allowed.
 7. Length budget:
-     summary: 30-50 words / 30-50 palabras
-     recommendation: 20-30 words / 20-30 palabras
+     summary: 35-55 words / 35-55 palabras
+     recommendation: 25-40 words / 25-40 palabras
+   The summary MUST contain at least one commercial insight beyond restating
+   the evidence numbers (e.g. competitive risk implication, revenue
+   opportunity size, urgency framing).
+   The recommendation MUST include: (a) contact channel + time window
+   anchored to priority_level, AND (b) one specific commercial angle the
+   sales rep can use to open the conversation (e.g. seasonal promotion,
+   product availability, potential revenue gap, win-back offer).
 8. Spanish output must be natural Castilian Spanish, not literal
    translation from English.
 
@@ -105,12 +112,24 @@ Two signals contribute: a statistical baseline (how late vs expected
 interval) and a GRU model (probability of ordering in next 4 weeks).
 
 The "summary" field MUST answer: WHY is this alert flagged today?
-Mention: days since last purchase, expected interval, the seasonal context
-(current quarter), and confidence level if it is "low".
+Mention: days since last purchase, expected interval, and the
+urgency_multiplier (how many buying cycles overdue). If
+reorder_probability_pct > 60, note that the client likely still has
+active demand and may be sourcing from another supplier. If
+confidence_level is "low", acknowledge the uncertainty briefly.
+Do NOT mention internal score fields. Do NOT mention the calendar quarter.
 
 The "recommendation" field MUST answer: WHAT should the sales rep do?
 Suggest a contact channel (phone / email / visit) and a time window
 ("this week" / "within 3 days"). Anchor it to the priority_level.
+Then add ONE specific commercial angle to open the conversation:
+* If urgency_multiplier > 3: frame as urgent account recovery ("lead with
+  a win-back offer or loyalty incentive")
+* If reorder_probability_pct > 65: frame as capturing an imminent order
+  ("the client is likely ready to buy — lead with availability and pricing")
+* If confidence_level is "low": frame as a check-in ("open with a needs
+  assessment before pitching")
+* Default: mention current product availability or a seasonal promotion
 """
 
 F2_TASK = """\
@@ -201,23 +220,28 @@ def _round_or_none(v, ndigits=4):
 
 def build_f1_evidence(alert: dict, scoring_date_str: str) -> dict:
     ev = alert.get("evidence") or {}
-    try:
-        sd = dt.date.fromisoformat(scoring_date_str)
-    except Exception:
-        sd = dt.date.today()
+    days     = ev.get("days_since_last_purchase")
+    interval = ev.get("expected_interval")
+    delay    = ev.get("delay")
+
+    urgency_multiplier = None
+    if interval and float(interval) > 0 and days is not None:
+        urgency_multiplier = round(float(days) / float(interval), 1)
+
+    rop = ev.get("reorder_probability")
+    reorder_pct = round(float(rop) * 100, 1) if rop is not None else None
+
     return {
-        "client_id":               str(alert.get("client_id")),
-        "product_family_biz":      alert.get("product_family_biz"),
-        "province":                alert.get("province"),
-        "priority_level":          alert.get("priority_level"),
-        "confidence_level":        alert.get("confidence_level"),
-        "current_quarter":         _quarter_from_date(sd),
-        "days_since_last_purchase":  ev.get("days_since_last_purchase"),
-        "expected_interval_days":    _round_or_none(ev.get("expected_interval"), 1),
-        "delay_days":                _round_or_none(ev.get("delay"), 1),
-        "seasonal_time_score":       _round_or_none(ev.get("seasonal_time_score"), 2),
-        "reorder_probability":       _round_or_none(ev.get("reorder_probability"), 2),
-        "replenishment_score":       _round_or_none(ev.get("replenishment_score"), 2),
+        "client_id":                str(alert.get("client_id")),
+        "province":                 alert.get("province"),
+        "product_family_biz":       alert.get("product_family_biz"),
+        "priority_level":           alert.get("priority_level"),
+        "confidence_level":         alert.get("confidence_level"),
+        "days_since_last_purchase": days,
+        "expected_interval_days":   _round_or_none(interval, 1),
+        "delay_days":               _round_or_none(delay, 1),
+        "urgency_multiplier":       urgency_multiplier,
+        "reorder_probability_pct":  reorder_pct,
     }
 
 def build_f2_evidence(alert: dict) -> dict:
@@ -335,6 +359,9 @@ def fallback_explanation(alert: dict) -> dict:
 # GEMINI CALL
 # ─────────────────────────────────────────────────────────────
 def call_gemini(prompt: str) -> str | None:
+    key = os.getenv("GEMINI_API_KEY")
+    if not key:
+        raise RuntimeError("GEMINI_API_KEY not configured")
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
@@ -349,7 +376,7 @@ def call_gemini(prompt: str) -> str | None:
         try:
             r = requests.post(
                 API_ENDPOINT,
-                params={"key": API_KEY},
+                params={"key": key},
                 json=payload,
                 timeout=30,
             )
