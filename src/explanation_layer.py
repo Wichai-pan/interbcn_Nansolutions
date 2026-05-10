@@ -106,30 +106,63 @@ F1_TASK = """\
 TASK: Explain a replenishment alert to a sales representative.
 
 CONTEXT:
-F1 detects clients whose purchase cycle for a commodity product family
-(Anestesia or Bioseguridad) is overdue based on their own seasonal pattern.
-Two signals contribute: a statistical baseline (how late vs expected
-interval) and a GRU model (probability of ordering in next 4 weeks).
+F1 uses TWO independent methods to detect overdue replenishment cycles.
+The Statistical Analysis (Method B) is the PRIMARY signal — build your
+narrative around it. The baseline+GRU (Method A) is a SECONDARY reference
+used only to corroborate or qualify, not to lead.
+
+  Method B — KMeans Behavioural Clustering (PRIMARY — lead with this):
+    stat_personal_interval_days: this client's own median inter-order interval
+    (180-day rolling window; more stable than short-term means).
+    stat_f_in_score: how many personal intervals this client is overdue [0..10].
+      0-3 = mild delay, 4-6 = moderate, 7-10 = severe.
+    stat_grading_eur: 2-year cumulative spend × recency factor (EUR) —
+    the revenue at stake if this client stops ordering.
+    stat_behavioral_status: cluster verdict — use this as the primary framing
+    of the client's situation ("Retention (Seasonal Inactive)", "Habitual", etc.)
+    stat_n_active_products: number of distinct product lines still purchased.
+
+  Method A — baseline+GRU (SECONDARY — use only to corroborate or flag divergence):
+    days_since_last_purchase and expected_interval_days give urgency_multiplier
+    (how many seasonal cycles this client is overdue per the baseline model).
+    reorder_probability_pct: GRU model's probability of ordering in next 4 weeks.
+
+  method_divergence: present when the two methods disagree significantly.
+  If present, mention it briefly and lean on Method B.
 
 The "summary" field MUST answer: WHY is this alert flagged today?
-Mention: days since last purchase, expected interval, and the
-urgency_multiplier (how many buying cycles overdue). If
-reorder_probability_pct > 60, note that the client likely still has
-active demand and may be sourcing from another supplier. If
-confidence_level is "low", acknowledge the uncertainty briefly.
-Do NOT mention internal score fields. Do NOT mention the calendar quarter.
+Structure: lead with the Statistical Analysis findings, then reference
+baseline+GRU to corroborate.
+- PRIMARY: use stat_behavioral_status as the opening framing of the client's state.
+- PRIMARY: if stat_f_in_score is present, anchor urgency to it
+  (e.g. "behavioural analysis scores this clinic {X}/10 overdue on its
+  personal {Y}-day reorder rhythm").
+- PRIMARY: if stat_grading_eur is present, state the revenue at stake.
+- SECONDARY: mention days_since_last_purchase and expected_interval_days only
+  to confirm the baseline+GRU signal aligns (or note divergence if it doesn't).
+- SECONDARY: if reorder_probability_pct > 60, add one sentence about active
+  demand / possible supplier leakage.
+- If method_divergence is present, acknowledge conflicting signals and defer to Method B.
+- If confidence_level is "low", acknowledge uncertainty briefly.
+- Do NOT mention internal score fields or model/algorithm names.
+- Do NOT mention calendar quarters.
 
 The "recommendation" field MUST answer: WHAT should the sales rep do?
 Suggest a contact channel (phone / email / visit) and a time window
 ("this week" / "within 3 days"). Anchor it to the priority_level.
-Then add ONE specific commercial angle to open the conversation:
-* If urgency_multiplier > 3: frame as urgent account recovery ("lead with
-  a win-back offer or loyalty incentive")
+Then add ONE specific commercial angle grounded in the Statistical Analysis:
+* If stat_f_in_score > 7: frame as urgent account recovery ("lead with a
+  win-back offer or loyalty incentive anchored to their purchase history")
+* If stat_grading_eur is present: reference the EUR figure to justify a
+  personalised offer ("this clinic has spent X€ over two years — open with
+  a volume or loyalty incentive")
 * If reorder_probability_pct > 65: frame as capturing an imminent order
-  ("the client is likely ready to buy — lead with availability and pricing")
-* If confidence_level is "low": frame as a check-in ("open with a needs
-  assessment before pitching")
-* Default: mention current product availability or a seasonal promotion
+  ("the clinic is likely ready to buy — lead with availability and pricing")
+* If stat_behavioral_status contains "Seasonal": frame as seasonal reactivation
+  ("match outreach timing to their seasonal rhythm")
+* If confidence_level is "low" OR method_divergence is present: frame as a
+  check-in ("open with a needs assessment before pitching")
+* Default: mention current product availability or a relevant promotion
 """
 
 F2_TASK = """\
@@ -218,6 +251,8 @@ def _round_or_none(v, ndigits=4):
     except (TypeError, ValueError):
         return v
 
+_TM_F_IN_DIVERGENCE_THRESHOLD = 0.8
+
 def build_f1_evidence(alert: dict, scoring_date_str: str) -> dict:
     ev = alert.get("evidence") or {}
     days     = ev.get("days_since_last_purchase")
@@ -231,18 +266,45 @@ def build_f1_evidence(alert: dict, scoring_date_str: str) -> dict:
     rop = ev.get("reorder_probability")
     reorder_pct = round(float(rop) * 100, 1) if rop is not None else None
 
-    return {
-        "client_id":                str(alert.get("client_id")),
-        "province":                 alert.get("province"),
-        "product_family_biz":       alert.get("product_family_biz"),
-        "priority_level":           alert.get("priority_level"),
-        "confidence_level":         alert.get("confidence_level"),
-        "days_since_last_purchase": days,
-        "expected_interval_days":   _round_or_none(interval, 1),
-        "delay_days":               _round_or_none(delay, 1),
-        "urgency_multiplier":       urgency_multiplier,
-        "reorder_probability_pct":  reorder_pct,
+    # Stat fields from teammate's KMeans model
+    stat_interval  = ev.get("stat_avg_interval_days")
+    stat_grading   = ev.get("stat_grading_eur")
+    stat_f_in      = ev.get("stat_f_in_fixed")
+    stat_n         = ev.get("stat_n_active_products")
+    stat_status    = ev.get("stat_behavioral_status")
+    stat_cluster   = ev.get("stat_cluster")
+
+    # Divergence flag: our urgency_multiplier (normalised to [0,10]) vs stat_f_in
+    method_divergence = None
+    if urgency_multiplier is not None and stat_f_in is not None:
+        our_scaled = min(urgency_multiplier, 10.0)
+        if abs(our_scaled - float(stat_f_in)) > _TM_F_IN_DIVERGENCE_THRESHOLD:
+            if our_scaled > float(stat_f_in):
+                method_divergence = "Model A flags higher urgency than statistical baseline"
+            else:
+                method_divergence = "Statistical baseline flags higher urgency than Model A"
+
+    out = {
+        "client_id":                    str(alert.get("client_id")),
+        "province":                     alert.get("province"),
+        "product_family_biz":           alert.get("product_family_biz"),
+        "priority_level":               alert.get("priority_level"),
+        "confidence_level":             alert.get("confidence_level"),
+        "days_since_last_purchase":     days,
+        "expected_interval_days":       _round_or_none(interval, 1),
+        "delay_days":                   _round_or_none(delay, 1),
+        "urgency_multiplier":           urgency_multiplier,
+        "reorder_probability_pct":      reorder_pct,
+        "stat_personal_interval_days":  _round_or_none(stat_interval, 1),
+        "stat_grading_eur":             _round_or_none(stat_grading, 2),
+        "stat_f_in_score":              _round_or_none(stat_f_in, 2),
+        "stat_n_active_products":       stat_n,
+        "stat_behavioral_status":       stat_status,
+        "stat_cluster":                 stat_cluster,
+        "method_divergence":            method_divergence,
     }
+    # Drop None values to keep prompt lean
+    return {k: v for k, v in out.items() if v is not None}
 
 def build_f2_evidence(alert: dict) -> dict:
     ev = alert.get("evidence") or {}

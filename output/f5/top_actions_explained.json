@@ -7,49 +7,55 @@
   },
   "actions": [
     {
-      "alert_id": "F1-000050",
+      "alert_id": "F1-000337",
       "rank_global": 1,
-      "client_id": "1000082089",
+      "client_id": "10052",
       "product_family_biz": "Anestesia",
-      "province": "Barcelona",
-      "segment_code": "8018",
+      "province": "Sta.Cruz Tenerife",
+      "segment_code": "38530",
       "module": "F1",
       "alert_type": "Replenishment",
-      "sub_type": "P1 Critical",
-      "unified_score": 1.04,
-      "module_score": 0.8173054251029142,
-      "module_rank_pct": 1.0,
+      "sub_type": "Replenishment (Active)",
+      "unified_score": 1.0395265151515152,
+      "module_score": 0.7539069571954156,
+      "module_rank_pct": 0.9995265151515151,
       "priority_level": "P1 Critical",
       "confidence_level": "high",
       "evidence": {
-        "days_since_last_purchase": 245,
-        "expected_interval": 89.25,
-        "delay": 155.75,
-        "seasonal_time_score": 13.02826597386292,
-        "reorder_probability": 0.6650266051292419,
-        "replenishment_score": 9.871833794538357
+        "days_since_last_purchase": 168,
+        "expected_interval": 77.0,
+        "delay": 91.0,
+        "seasonal_time_score": 6.017830648521585,
+        "reorder_probability": 0.7990611791610718,
+        "replenishment_score": 4.98303742360665,
+        "stat_avg_interval_days": 87.9,
+        "stat_grading_eur": 31594.0,
+        "stat_f_in_fixed": 3.14,
+        "stat_n_active_products": 3.0,
+        "stat_behavioral_status": "Retention (Seasonal Inactive)",
+        "stat_cluster": 4.0
       },
       "linked_signals": [
-        "F3-011519"
+        "F3-009647"
       ],
       "status": "Pending",
       "rank_top": 1,
-      "adjusted_score": 1.04,
+      "adjusted_score": 1.0395265151515152,
       "selection_reason": {
-        "raw_score": 1.04,
-        "adjusted_score": 1.04,
+        "raw_score": 1.0395265151515152,
+        "adjusted_score": 1.0395265151515152,
         "penalties_applied": []
       },
       "explanation": {
-        "summary_en": "The dental clinic in Barcelona is overdue for Anestesia products by 155.8 days, having last purchased 245 days ago against an expected 89.2-day interval. This represents 2.7 buying cycles overdue. With a 66.5% reorder probability, the client likely has active demand and may be sourcing from a competitor, indicating a significant revenue opportunity.",
-        "summary_es": "La clínica dental en Barcelona tiene un retraso de 155.8 días en la compra de productos de Anestesia, con 245 días desde la última compra frente a un intervalo esperado de 89.2 días. Esto representa 2.7 ciclos de compra atrasados. Con una probabilidad de recompra del 66.5%, el cliente probablemente tiene demanda activa y podría estar comprando a un competidor, lo que indica una oportunidad de ingresos significativa.",
-        "recommendation_en": "Contact the client via phone within 3 days. The client is likely ready to buy — lead with availability and pricing to capture an imminent order.",
-        "recommendation_es": "Contacte al cliente por teléfono en los próximos 3 días. El cliente probablemente está listo para comprar; inicie la conversación destacando la disponibilidad y el precio para asegurar un pedido inminente."
+        "summary_en": "The dental clinic in Sta.Cruz Tenerife, classified as \"Retention (Seasonal Inactive)\", is 3/10 overdue on its 88-day reorder rhythm, indicating a mild delay. With €31,594 in potential revenue at stake, the client shows high reorder probability (79.9%), suggesting active demand. Both models confirm an overdue status, despite some divergence.",
+        "summary_es": "La clínica dental en Sta.Cruz Tenerife, clasificada como \"Retención (Inactiva Estacional)\", tiene un retraso de 3/10 en su ritmo de reorden de 88 días, lo que indica una demora leve. Con 31.594€ de ingresos potenciales en juego, el cliente muestra una alta probabilidad de reorden (79.9%), sugiriendo demanda activa. Ambos modelos confirman un estado de retraso, a pesar de cierta divergencia.",
+        "recommendation_en": "Contact the client via phone within 3 days. Open with a needs assessment, acknowledging the conflicting signals, and explore their current requirements before pitching.",
+        "recommendation_es": "Contacte a la clínica por teléfono en los próximos 3 días. Inicie con una evaluación de necesidades, reconociendo las señales divergentes, y explore sus requisitos actuales antes de presentar ofertas."
       }
     },
     {
       "alert_id": "F3-000018",
-      "rank_global": 4,
+      "rank_global": 2,
       "client_id": "39718",
       "product_family_biz": "Biomateriales",
       "province": "Málaga",
@@ -84,15 +90,15 @@
         "penalties_applied": []
       },
       "explanation": {
-        "summary_en": "The dental clinic in Málaga presents a P1 Critical \"High Potential Underutilization\" opportunity in Biomateriales, with a significant potential gap of 49,332.48 EUR. Currently, only 11.09% of its estimated potential is captured, indicating substantial unmet demand or possible competitor leakage. This client is also flagged as 'Early Warning' in F2, suggesting a need for proactive engagement.",
-        "summary_es": "La clínica dental en Málaga representa una oportunidad P1 Crítica de \"Infrautilización de Alto Potencial\" en Biomateriales, con una brecha de potencial de 49.332,48 EUR. Solo el 11,09% de su potencial estimado está capturado, lo que indica una demanda no satisfecha o posible fuga a la competencia. Este cliente también está en 'Alerta Temprana' en F2, lo que sugiere la necesidad de una acción proactiva.",
-        "recommendation_en": "Engage the client in Málaga within 24-48 hours via phone or in-person visit. Focus on understanding their current Biomateriales needs to address the 49,332.48 EUR potential gap and prevent further drift.",
-        "recommendation_es": "Contacte a la clínica en Málaga en las próximas 24-48 horas por teléfono o visita presencial. Concéntrese en comprender sus necesidades actuales de Biomateriales para abordar la brecha de 49.332,48 EUR y evitar una mayor desviación."
+        "summary_en": "The dental clinic in Málaga presents a significant opportunity, capturing only 11.09% of its estimated potential. With a potential gap of €49,332.48, this suggests substantial unmet demand or possible competitor leakage. This client is also flagged as 'Early Warning' in F2, indicating a need for prompt engagement.",
+        "summary_es": "La clínica dental en Málaga representa una oportunidad significativa, capturando solo el 11.09% de su potencial estimado. Con una brecha de €49,332.48, esto sugiere una demanda no capturada considerable o posible fuga a la competencia. Además, este cliente está en 'Early Warning' en F2, lo que indica la necesidad de una acción rápida.",
+        "recommendation_en": "Contact the client within 24-48 hours via phone or in-person visit. Focus on understanding their current needs to address the potential revenue gap in Biomateriales.",
+        "recommendation_es": "Contacte al cliente en las próximas 24-48 horas por teléfono o visita presencial. Concéntrese en comprender sus necesidades actuales para abordar la brecha de ingresos en Biomateriales."
       }
     },
     {
       "alert_id": "F2-000001",
-      "rank_global": 327,
+      "rank_global": 226,
       "client_id": "7135",
       "product_family_biz": "Biomateriales",
       "province": "Sta.Cruz Tenerife",
@@ -126,63 +132,15 @@
         "penalties_applied": []
       },
       "explanation": {
-        "summary_en": "The dental clinic in Sta.Cruz Tenerife shows signs of being a Likely Lost client due to an extended silence score of 115.33, significantly exceeding its historical threshold of 15.2. This indicates a critical revenue opportunity at risk, given 1753 days since the last purchase.",
-        "summary_es": "La clínica dental en Sta.Cruz Tenerife muestra signos de ser un cliente \"Likely Lost\" debido a un \"silence score\" de 115.33, superando su umbral histórico de 15.2. Esto indica una oportunidad de ingresos crítica en riesgo, con 1753 días desde la última compra.",
-        "recommendation_en": "Given the 'Likely Lost' status and P1 Critical priority, a field visit or account manager outreach within 24-48 hours is recommended to re-engage and understand their current needs.",
-        "recommendation_es": "Dado el estado 'Likely Lost' y la prioridad P1 Crítica, se recomienda una visita o contacto directo del gestor de cuenta en 24-48 horas para reenganchar y entender sus necesidades actuales."
-      }
-    },
-    {
-      "alert_id": "F1-000100",
-      "rank_global": 2,
-      "client_id": "28152",
-      "product_family_biz": "Anestesia",
-      "province": "Barcelona",
-      "segment_code": "8340",
-      "module": "F1",
-      "alert_type": "Replenishment",
-      "sub_type": "P1 Critical",
-      "unified_score": 1.039781181619256,
-      "module_score": 0.7987332350576472,
-      "module_rank_pct": 0.999781181619256,
-      "priority_level": "P1 Critical",
-      "confidence_level": "high",
-      "evidence": {
-        "days_since_last_purchase": 434,
-        "expected_interval": 212.33333333333334,
-        "delay": 221.66666666666666,
-        "seasonal_time_score": 27.42413778650721,
-        "reorder_probability": 0.6095014810562134,
-        "replenishment_score": 20.779935774265358
-      },
-      "linked_signals": [
-        "F3-001721"
-      ],
-      "status": "Pending",
-      "rank_top": 4,
-      "adjusted_score": 0.7278468271334791,
-      "selection_reason": {
-        "raw_score": 1.039781181619256,
-        "adjusted_score": 0.7278468271334791,
-        "penalties_applied": [
-          {
-            "round": 1,
-            "reason": "same_module",
-            "vs_alert_id": "F1-000050",
-            "factor": 0.7
-          }
-        ]
-      },
-      "explanation": {
-        "summary_en": "The dental clinic in Barcelona is overdue for an Anestesia reorder, having last purchased 434 days ago against an expected 212.3-day interval, indicating two buying cycles are overdue. With a 61% reorder probability, the client likely has active demand and may be sourcing from a competitor, representing a significant revenue opportunity.",
-        "summary_es": "La clínica dental en Barcelona tiene un retraso en la reposición de Anestesia, con 434 días desde la última compra frente a un intervalo esperado de 212.3 días, lo que indica dos ciclos de compra vencidos. Con un 61% de probabilidad de recompra, el cliente probablemente tiene demanda activa y podría estar comprando a un competidor, lo que representa una oportunidad de ingresos significativa.",
-        "recommendation_en": "Contact the client via phone within 3 days. The client is likely ready to buy — lead with availability and pricing to capture an imminent order.",
-        "recommendation_es": "Contacte al cliente por teléfono en los próximos 3 días. El cliente probablemente está listo para comprar; inicie la conversación destacando la disponibilidad y el precio para asegurar un pedido inminente."
+        "summary_en": "The dental clinic in Sta.Cruz Tenerife shows signs of being a Likely Lost client due to an extended silence score of 115.33, significantly exceeding its historical threshold of 15.2. This indicates a critical revenue opportunity at risk, suggesting a severe decline in engagement.",
+        "summary_es": "La clínica dental en Sta.Cruz Tenerife muestra signos de ser un cliente \"Likely Lost\" debido a un \"silence score\" de 115.33, superando ampliamente su umbral histórico de 15.2. Esto indica una oportunidad de ingresos crítica en riesgo, sugiriendo un deterioro severo en el compromiso.",
+        "recommendation_en": "A field visit or account manager outreach is recommended immediately. Propose a win-back offer on Biomateriales to re-engage this P1 Critical client.",
+        "recommendation_es": "Se recomienda una visita en persona o contacto del gestor de cuentas de inmediato. Proponga una oferta de recuperación en Biomateriales para reactivar a este cliente P1 Crítico."
       }
     },
     {
       "alert_id": "F3-000022",
-      "rank_global": 6,
+      "rank_global": 3,
       "client_id": "6642",
       "product_family_biz": "Biomateriales",
       "province": "Alicante",
@@ -209,7 +167,7 @@
         "F2-002202"
       ],
       "status": "Pending",
-      "rank_top": 5,
+      "rank_top": 4,
       "adjusted_score": 0.7273773752729037,
       "selection_reason": {
         "raw_score": 1.0391105361041482,
@@ -224,10 +182,64 @@
         ]
       },
       "explanation": {
-        "summary_en": "The dental clinic in Alicante presents a high potential underutilization opportunity, capturing only 2.5% of its estimated potential. With a significant potential gap of 36,064.09 EUR and an 'At Risk' F2 status, there's an urgent need to address possible competitor leakage.",
-        "summary_es": "La clínica dental en Alicante presenta una oportunidad de subutilización de alto potencial, capturando solo el 2.5% de su potencial estimado. Con una brecha de 36.064,09 EUR y un estado F2 'At Risk', es urgente abordar la posible fuga a la competencia.",
-        "recommendation_en": "Engage the account manager immediately via phone to discuss the 'At Risk' status and propose an upsell strategy to capture the 36,064.09 EUR potential gap.",
-        "recommendation_es": "Contactar al gestor de cuenta de inmediato por teléfono para discutir el estado 'At Risk' y proponer una estrategia de venta adicional para capturar la brecha de 36.064,09 EUR."
+        "summary_en": "The dental clinic in Alicante presents a P1 Critical opportunity with a high potential gap of 36,064.09 EUR, capturing only 2.5% of its estimated potential. This significant underutilization, coupled with its 'At Risk' status, indicates urgent unmet demand or possible competitor leakage.",
+        "summary_es": "La clínica dental en Alicante representa una oportunidad P1 Crítica con una brecha de potencial de 36.064,09 EUR, capturando solo el 2,5% de su potencial estimado. Esta subutilización significativa, junto con su estado 'At Risk', indica una demanda no capturada urgente o posible fuga a la competencia.",
+        "recommendation_en": "Engage the client immediately via phone or in-person. Focus on addressing the 'At Risk' status and explore their Biomateriales needs to capture the 36,064.09 EUR potential gap.",
+        "recommendation_es": "Contacte al cliente de inmediato por teléfono o en persona. Céntrese en abordar el estado 'At Risk' y explore sus necesidades de Biomateriales para capturar la brecha de potencial de 36.064,09 EUR."
+      }
+    },
+    {
+      "alert_id": "F1-000781",
+      "rank_global": 5,
+      "client_id": "37656",
+      "product_family_biz": "Bioseguridad",
+      "province": "Toledo",
+      "segment_code": "45100",
+      "module": "F1",
+      "alert_type": "Replenishment",
+      "sub_type": "Replenishment (Active)",
+      "unified_score": 1.0385795454545454,
+      "module_score": 0.6865847519111842,
+      "module_rank_pct": 0.9985795454545454,
+      "priority_level": "P1 Critical",
+      "confidence_level": "high",
+      "evidence": {
+        "days_since_last_purchase": 98,
+        "expected_interval": 35.5,
+        "delay": 62.5,
+        "seasonal_time_score": 3.084485617124554,
+        "reorder_probability": 0.8968018889427185,
+        "replenishment_score": 2.120203114696556,
+        "stat_avg_interval_days": 110.2,
+        "stat_grading_eur": 23786.0,
+        "stat_f_in_fixed": 3.75,
+        "stat_n_active_products": 4.0,
+        "stat_behavioral_status": "Out-of-period / Holiday behavior",
+        "stat_cluster": 3.0
+      },
+      "linked_signals": [
+        "F3-011542"
+      ],
+      "status": "Pending",
+      "rank_top": 5,
+      "adjusted_score": 0.7270056818181818,
+      "selection_reason": {
+        "raw_score": 1.0385795454545454,
+        "adjusted_score": 0.7270056818181818,
+        "penalties_applied": [
+          {
+            "round": 1,
+            "reason": "same_module",
+            "vs_alert_id": "F1-000337",
+            "factor": 0.7
+          }
+        ]
+      },
+      "explanation": {
+        "summary_en": "The dental clinic in Toledo, currently exhibiting \"Out-of-period / Holiday behavior\", is 3.75/10 overdue on its typical 110-day reorder rhythm, indicating a potential revenue gap of €23,786. The baseline model corroborates a significant delay of 62.5 days, and a high reorder probability suggests active demand, possibly from a competitor.",
+        "summary_es": "La clínica dental en Toledo, con un comportamiento \"Fuera de período / Vacaciones\", tiene un retraso de 3.75/10 en su ritmo de reorden de 110 días, lo que representa un riesgo de ingresos de 23.786€. El modelo base confirma un retraso de 62.5 días, y la alta probabilidad de reorden sugiere demanda activa, quizás de un competidor.",
+        "recommendation_en": "Contact the client via phone within 3 days. Given the high reorder probability, lead with product availability and pricing to capture an imminent order.",
+        "recommendation_es": "Contacte a la clínica por teléfono en los próximos 3 días. Dada la alta probabilidad de reorden, inicie la conversación con la disponibilidad y precios de productos para capturar un pedido inminente."
       }
     }
   ],
@@ -236,6 +248,6 @@
     "temperature": 0.3,
     "n_items": 5,
     "n_fallback": 0,
-    "generated_at": "2026-05-10T09:00:54"
+    "generated_at": "2026-05-10T11:11:20"
   }
 }

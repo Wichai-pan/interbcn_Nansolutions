@@ -109,7 +109,7 @@ if f1_raw is not None:
     f1["alert_id_f4"]    = ["F1-" + str(i+1).zfill(6) for i in range(len(f1))]
     f1["module"]         = "F1"
     f1["alert_type"]     = "Replenishment"
-    f1["sub_type"]       = f1["combined_priority"] if "combined_priority" in f1.columns else f1["priority_level"]
+    f1["sub_type"]       = "Replenishment (Active)"   # overwritten to "Reactivation (Dormant)" in Layer 1
     f1["module_score"]   = f1["f1_final_score"]
     f1["module_priority_level"] = f1["combined_priority"] if "combined_priority" in f1.columns else f1["priority_level"]
 
@@ -204,6 +204,158 @@ else:
     f3_unified = pd.DataFrame()
 
 print(f"  F3 unified: {len(f3_unified):,}")
+
+# ═══════════════════════════════════════════════════════════════
+# TEAMMATE STATISTICAL ENRICHMENT (互补信号，不影响主评分)
+# Source : teamate/Final Gradation Results.csv
+# Method : KMeans clustering + dynamic 180-day threshold
+#          + Grading = F_in × Potencial_H
+# Granularity: client × product  →  aggregated to client × family
+# Variables  : tm_df (raw), tm_agg (aggregated), stat_* (evidence fields)
+# ═══════════════════════════════════════════════════════════════
+
+TM_CSV_PATH = Path("./teamate/Final Gradation Results.csv")
+
+TM_CATEGORY_MAP = {
+    "Categoria C1": "Anestesia",
+    "Categoria C2": "Bioseguridad",
+    "Categoria T1": "Biomateriales",
+}
+
+TM_STATUS_SEVERITY = {
+    "Lost Customer":                     4,
+    "Retention (Seasonal Inactive)":     3,
+    "Retention (1st historic purchase)": 2,
+    "Out-of-period / Holiday behavior":  1,
+    "Habitual":                          0,
+}
+
+TM_MIN_RELIABLE_INTERVAL = 7
+TM_F_IN_CAP              = 10.0
+
+
+def _tm_fix_f_in(mean_val, mean_gr_val, avg_delta_val, current_delta):
+    indiv = None
+    if pd.notna(mean_val) and float(mean_val) >= TM_MIN_RELIABLE_INTERVAL:
+        indiv = float(mean_val)
+    elif pd.notna(avg_delta_val) and float(avg_delta_val) >= TM_MIN_RELIABLE_INTERVAL:
+        indiv = float(avg_delta_val)
+    grp = float(mean_gr_val) if (pd.notna(mean_gr_val) and
+                                  float(mean_gr_val) >= TM_MIN_RELIABLE_INTERVAL) else None
+    if indiv is None and grp is None:
+        return None
+    t_indiv = float(current_delta) / indiv if indiv else 0.0
+    t_group = float(current_delta) / grp   if grp   else 0.0
+    return round(min(t_indiv + t_group, TM_F_IN_CAP), 2)
+
+
+def _tm_most_severe_status(status_series):
+    sev = status_series.map(TM_STATUS_SEVERITY).fillna(-1)
+    return status_series.iloc[sev.values.argmax()]
+
+
+if TM_CSV_PATH.exists():
+    print("\n[Stat Enrichment] Loading teammate data …")
+
+    tm_df = pd.read_csv(TM_CSV_PATH)
+    tm_df = tm_df.rename(columns={"Id. Cliente": "client_id"})
+    tm_df["client_id"] = tm_df["client_id"].astype(str).str.strip()
+
+    tm_df["product_family_biz"] = tm_df["Category"].map(TM_CATEGORY_MAP)
+    tm_before = len(tm_df)
+    tm_df = tm_df.dropna(subset=["product_family_biz"])
+    print(f"  rows after category mapping: {len(tm_df):,} / {tm_before:,}")
+
+    tm_df["_stat_f_in_fixed"] = tm_df.apply(
+        lambda r: _tm_fix_f_in(
+            r.get("mean"), r.get("mean_gr"),
+            r.get("avg_delta_t_customer_product"),
+            r.get("current_delta_t", 0)
+        ),
+        axis=1
+    )
+
+    # ── Pre-aggregation: identify client×family groups whose most-severe
+    #    product status is "Lost Customer" and evict them from F1 before ranking.
+    #    Uses the same _tm_most_severe_status logic as tm_agg so the filter is
+    #    consistent with what stat_behavioral_status will show in the evidence.
+    #    (tm_agg still uses the full tm_df so stat_behavioral_status is accurate)
+    group_worst = (
+        tm_df.groupby(["client_id", "product_family_biz"])["Status"]
+        .apply(_tm_most_severe_status)
+    )
+    fully_lost_keys = set(group_worst[group_worst == "Lost Customer"].index.tolist())
+
+    if fully_lost_keys and len(f1_unified) > 0:
+        f1_unified["client_id"] = f1_unified["client_id"].astype(str).str.strip()
+        lost_mi   = pd.MultiIndex.from_tuples(fully_lost_keys)
+        f1_mi     = pd.MultiIndex.from_arrays(
+            [f1_unified["client_id"], f1_unified["product_family_biz"]]
+        )
+        lost_mask = f1_mi.isin(lost_mi)
+        n_removed = int(lost_mask.sum())
+        f1_unified = f1_unified[~lost_mask].reset_index(drop=True)
+        print(f"  F1 alerts removed (all products Lost Customer per stat method): {n_removed:,}")
+
+    tm_agg = (
+        tm_df
+        .groupby(["client_id", "product_family_biz"], as_index=False)
+        .agg(
+            stat_avg_interval_days=(
+                "avg_delta_t_customer_product",
+                lambda x: round(x[x >= TM_MIN_RELIABLE_INTERVAL].mean(), 1)
+                          if (x >= TM_MIN_RELIABLE_INTERVAL).any() else None
+            ),
+            stat_grading_eur=("Grading", lambda x: round(x.sum(), 0)),
+            stat_f_in_fixed=(
+                "_stat_f_in_fixed",
+                lambda x: round(x.dropna().max(), 2) if x.notna().any() else None
+            ),
+            stat_n_active_products=(
+                "Status",
+                lambda x: int((x != "Lost Customer").sum())
+            ),
+            stat_behavioral_status=("Status", _tm_most_severe_status),
+            stat_cluster=(
+                "Cluster",
+                lambda x: int(x.mode().iloc[0]) if len(x) > 0 else None
+            ),
+        )
+    )
+
+    n_tm = len(tm_agg)
+    print(f"  tm_agg rows (client×family): {n_tm:,}")
+
+    if len(f1_unified) > 0:
+        f1_unified["client_id"] = f1_unified["client_id"].astype(str).str.strip()
+        f1_unified = f1_unified.merge(
+            tm_agg, on=["client_id", "product_family_biz"], how="left"
+        )
+        n_matched = f1_unified["stat_avg_interval_days"].notna().sum()
+        print(f"  F1 alerts matched with stat data: {n_matched:,} / {len(f1_unified):,}")
+
+        # Write stat_* values back into the evidence dict (built before the join)
+        _stat_cols = [c for c in f1_unified.columns if c.startswith("stat_")]
+        def _enrich_evidence(row):
+            ev = dict(row["evidence"]) if isinstance(row["evidence"], dict) else {}
+            for col in _stat_cols:
+                val = row[col]
+                ev[col] = to_jsonable(val)
+            return ev
+        f1_unified["evidence"] = f1_unified.apply(_enrich_evidence, axis=1)
+    else:
+        print("  f1_unified is empty — skipping join")
+
+else:
+    print(f"\n[Stat Enrichment] {TM_CSV_PATH} not found — skipping")
+    for _col in ["stat_avg_interval_days", "stat_grading_eur", "stat_f_in_fixed",
+                 "stat_n_active_products", "stat_behavioral_status", "stat_cluster"]:
+        if len(f1_unified) > 0:
+            f1_unified[_col] = None
+
+# ═══════════════════════════════════════════════════════════════
+# END TEAMMATE STATISTICAL ENRICHMENT
+# ═══════════════════════════════════════════════════════════════
 
 # ─────────────────────────────────────────────────────────────
 # STAGE 1 — IN-MODULE NORMALIZATION

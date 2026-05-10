@@ -602,6 +602,12 @@ window.PROVINCE_CENTROIDS = {
       potential_gap: "Gap (EUR)",
       capture_window_flag: "Capture window",
       lost_status_f2: "F2 status",
+      stat_avg_interval_days: "★ Stat: personal interval (d)",
+      stat_grading_eur: "★ Stat: 2yr grading (EUR)",
+      stat_f_in_fixed: "★ Stat: F-in score [0-10]",
+      stat_n_active_products: "★ Stat: active product lines",
+      stat_behavioral_status: "★ Stat: behavioural status",
+      stat_cluster: "★ Stat: cluster",
     },
   },
 
@@ -712,6 +718,12 @@ window.PROVINCE_CENTROIDS = {
       potential_gap: "Gap (EUR)",
       capture_window_flag: "Ventana de captación",
       lost_status_f2: "Estado F2",
+      stat_avg_interval_days: "★ Est: intervalo personal (d)",
+      stat_grading_eur: "★ Est: calificación 2 años (EUR)",
+      stat_f_in_fixed: "★ Est: score F-in [0-10]",
+      stat_n_active_products: "★ Est: líneas de producto activas",
+      stat_behavioral_status: "★ Est: estado conductual",
+      stat_cluster: "★ Est: cluster",
     },
   },
 };
@@ -860,12 +872,13 @@ window.WEEKDAYS = {
     if (key === 'utilization_ratio' || key === 'volume_drop_ratio' || key === 'frequency_drop_ratio' || key === 'reorder_probability') {
       return (v * 100).toFixed(1) + '%';
     }
-    if (key === 'potential_value' || key === 'observed_value_12m' || key === 'potential_gap' || key === 'hist_avg_monthly_value' || key === 'recent_avg_monthly_value') {
+    if (key === 'potential_value' || key === 'observed_value_12m' || key === 'potential_gap' || key === 'hist_avg_monthly_value' || key === 'recent_avg_monthly_value' || key === 'stat_grading_eur') {
       return fmtEUR(v);
     }
-    if (key === 'days_since_last_purchase' || key === 'expected_interval' || key === 'delay' || key === 'threshold_used') {
+    if (key === 'days_since_last_purchase' || key === 'expected_interval' || key === 'delay' || key === 'threshold_used' || key === 'stat_avg_interval_days') {
       return fmtFloat(v, key === 'days_since_last_purchase' ? 0 : 1);
     }
+    if (key === 'stat_f_in_fixed') return fmtFloat(v, 2) + ' / 10';
     if (Math.abs(v) >= 100) return fmtFloat(v, 2);
     return fmtFloat(v, 3);
   }
@@ -954,7 +967,7 @@ window.WEEKDAYS = {
             <span class="font-mono">${a.alert_id}</span>
             <span>·</span>
             <span class="flex items-center gap-1">
-              <span class="w-10 score-bar inline-block"><span class="score-fill block" style="width:${(a.unified_score * 100).toFixed(0)}%"></span></span>
+              <span class="w-10 score-bar inline-block"><span class="score-fill block" style="width:${Math.min(a.unified_score * 100, 100).toFixed(0)}%"></span></span>
               <span class="font-mono tabular-nums">${a.unified_score.toFixed(2)}</span>
             </span>
           </div>
@@ -1449,7 +1462,7 @@ window.WEEKDAYS = {
         <td><span class="pri ${priCls}">${escapeHTML(a.priority_level)}</span></td>
         <td>
           <div class="flex items-center gap-2">
-            <span class="score-bar"><span class="score-fill" style="width:${(a.unified_score * 100).toFixed(0)}%"></span></span>
+            <span class="score-bar"><span class="score-fill" style="width:${Math.min(a.unified_score * 100, 100).toFixed(0)}%"></span></span>
             <span class="font-mono tabular-nums text-[11.5px]">${a.unified_score.toFixed(2)}</span>
           </div>
         </td>
@@ -1511,22 +1524,46 @@ window.WEEKDAYS = {
     }
     const hasExisting = !!state.explanations[id];
 
+    // Split evidence into our-method fields vs stat_* fields
+    const evEntries = Object.entries(a.evidence || {}).filter(([_,v]) => v !== null);
+    const ourEntries  = evEntries.filter(([k]) => !k.startsWith('stat_'));
+    const statEntries = evEntries.filter(([k]) =>  k.startsWith('stat_'));
+    const hasDualCol  = statEntries.length > 0;
+    const isEs = state.lang === 'es';
+
+    const mkEvCell = (entries) => entries.map(([k, v]) => `
+      <div>
+        <div class="k">${escapeHTML(tEv(k))}</div>
+        <div class="v">${escapeHTML(fmtEvidenceValue(k, v))}</div>
+      </div>`).join('');
+
+    const linkedHTML = a.linked_signals && a.linked_signals.length ? `
+      <div style="grid-column: 1/-1;">
+        <div class="k">${isEs ? 'Señales vinculadas' : 'Linked signals'}</div>
+        <div class="v">${a.linked_signals.map(s => escapeHTML(JSON.stringify(s))).join(', ')}</div>
+      </div>` : '';
+
+    const evidenceHTML = hasDualCol ? `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#2563eb;margin-bottom:6px;padding:2px 6px;background:#eff6ff;border-radius:4px;display:inline-block">
+            baseline+GRU
+          </div>
+          <div class="evidence-grid">${mkEvCell(ourEntries)}${linkedHTML}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7c3aed;margin-bottom:6px;padding:2px 6px;background:#f5f3ff;border-radius:4px;display:inline-block">
+            ${isEs ? 'Análisis Estadístico' : 'Statistical Analysis'}
+          </div>
+          <div class="evidence-grid">${mkEvCell(statEntries)}</div>
+        </div>
+      </div>` : `
+      <div class="evidence-grid">${mkEvCell(ourEntries)}${linkedHTML}</div>`;
+
     const evHTML = `
       <tr data-ev-row="1">
         <td class="ev-cell" colspan="10">
-          <div class="evidence-grid">
-            ${Object.entries(a.evidence || {}).filter(([_,v]) => v !== null).map(([k, v]) => `
-              <div>
-                <div class="k">${escapeHTML(tEv(k))}</div>
-                <div class="v">${escapeHTML(fmtEvidenceValue(k, v))}</div>
-              </div>
-            `).join('')}
-            ${a.linked_signals && a.linked_signals.length ? `
-              <div style="grid-column: 1/-1;">
-                <div class="k">${state.lang === 'es' ? 'Señales vinculadas' : 'Linked signals'}</div>
-                <div class="v">${a.linked_signals.map(s => escapeHTML(JSON.stringify(s))).join(', ')}</div>
-              </div>` : ''}
-          </div>
+          ${evidenceHTML}
           <div class="px-7 pb-4 pt-2">
             ${hasExisting
               ? `<div id="explain-${id}"></div>`
@@ -1538,7 +1575,7 @@ window.WEEKDAYS = {
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" class="shrink-0">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                   </svg>
-                  ${state.lang === 'es' ? 'Explicar con IA' : 'Explain with AI'}
+                  ${isEs ? 'Explicar con IA' : 'Explain with AI'}
                 </button>
                 <div id="explain-${id}"></div>`
             }

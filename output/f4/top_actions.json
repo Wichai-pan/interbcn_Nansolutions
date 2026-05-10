@@ -7,43 +7,49 @@
   },
   "actions": [
     {
-      "alert_id": "F1-000050",
+      "alert_id": "F1-000337",
       "rank_global": 1,
-      "client_id": "1000082089",
+      "client_id": "10052",
       "product_family_biz": "Anestesia",
-      "province": "Barcelona",
-      "segment_code": "8018",
+      "province": "Sta.Cruz Tenerife",
+      "segment_code": "38530",
       "module": "F1",
       "alert_type": "Replenishment",
-      "sub_type": "P1 Critical",
-      "unified_score": 1.04,
-      "module_score": 0.8173054251029142,
-      "module_rank_pct": 1.0,
+      "sub_type": "Replenishment (Active)",
+      "unified_score": 1.0395265151515152,
+      "module_score": 0.7539069571954156,
+      "module_rank_pct": 0.9995265151515151,
       "priority_level": "P1 Critical",
       "confidence_level": "high",
       "evidence": {
-        "days_since_last_purchase": 245,
-        "expected_interval": 89.25,
-        "delay": 155.75,
-        "seasonal_time_score": 13.02826597386292,
-        "reorder_probability": 0.6650266051292419,
-        "replenishment_score": 9.871833794538357
+        "days_since_last_purchase": 168,
+        "expected_interval": 77.0,
+        "delay": 91.0,
+        "seasonal_time_score": 6.017830648521585,
+        "reorder_probability": 0.7990611791610718,
+        "replenishment_score": 4.98303742360665,
+        "stat_avg_interval_days": 87.9,
+        "stat_grading_eur": 31594.0,
+        "stat_f_in_fixed": 3.14,
+        "stat_n_active_products": 3.0,
+        "stat_behavioral_status": "Retention (Seasonal Inactive)",
+        "stat_cluster": 4.0
       },
       "linked_signals": [
-        "F3-011519"
+        "F3-009647"
       ],
       "status": "Pending",
       "rank_top": 1,
-      "adjusted_score": 1.04,
+      "adjusted_score": 1.0395265151515152,
       "selection_reason": {
-        "raw_score": 1.04,
-        "adjusted_score": 1.04,
+        "raw_score": 1.0395265151515152,
+        "adjusted_score": 1.0395265151515152,
         "penalties_applied": []
       }
     },
     {
       "alert_id": "F3-000018",
-      "rank_global": 4,
+      "rank_global": 2,
       "client_id": "39718",
       "product_family_biz": "Biomateriales",
       "province": "Málaga",
@@ -80,7 +86,7 @@
     },
     {
       "alert_id": "F2-000001",
-      "rank_global": 327,
+      "rank_global": 226,
       "client_id": "7135",
       "product_family_biz": "Biomateriales",
       "province": "Sta.Cruz Tenerife",
@@ -115,50 +121,8 @@
       }
     },
     {
-      "alert_id": "F1-000100",
-      "rank_global": 2,
-      "client_id": "28152",
-      "product_family_biz": "Anestesia",
-      "province": "Barcelona",
-      "segment_code": "8340",
-      "module": "F1",
-      "alert_type": "Replenishment",
-      "sub_type": "P1 Critical",
-      "unified_score": 1.039781181619256,
-      "module_score": 0.7987332350576472,
-      "module_rank_pct": 0.999781181619256,
-      "priority_level": "P1 Critical",
-      "confidence_level": "high",
-      "evidence": {
-        "days_since_last_purchase": 434,
-        "expected_interval": 212.33333333333334,
-        "delay": 221.66666666666666,
-        "seasonal_time_score": 27.42413778650721,
-        "reorder_probability": 0.6095014810562134,
-        "replenishment_score": 20.779935774265358
-      },
-      "linked_signals": [
-        "F3-001721"
-      ],
-      "status": "Pending",
-      "rank_top": 4,
-      "adjusted_score": 0.7278468271334791,
-      "selection_reason": {
-        "raw_score": 1.039781181619256,
-        "adjusted_score": 0.7278468271334791,
-        "penalties_applied": [
-          {
-            "round": 1,
-            "reason": "same_module",
-            "vs_alert_id": "F1-000050",
-            "factor": 0.7
-          }
-        ]
-      }
-    },
-    {
       "alert_id": "F3-000022",
-      "rank_global": 6,
+      "rank_global": 3,
       "client_id": "6642",
       "product_family_biz": "Biomateriales",
       "province": "Alicante",
@@ -185,7 +149,7 @@
         "F2-002202"
       ],
       "status": "Pending",
-      "rank_top": 5,
+      "rank_top": 4,
       "adjusted_score": 0.7273773752729037,
       "selection_reason": {
         "raw_score": 1.0391105361041482,
@@ -195,6 +159,54 @@
             "round": 2,
             "reason": "same_module",
             "vs_alert_id": "F3-000018",
+            "factor": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "alert_id": "F1-000781",
+      "rank_global": 5,
+      "client_id": "37656",
+      "product_family_biz": "Bioseguridad",
+      "province": "Toledo",
+      "segment_code": "45100",
+      "module": "F1",
+      "alert_type": "Replenishment",
+      "sub_type": "Replenishment (Active)",
+      "unified_score": 1.0385795454545454,
+      "module_score": 0.6865847519111842,
+      "module_rank_pct": 0.9985795454545454,
+      "priority_level": "P1 Critical",
+      "confidence_level": "high",
+      "evidence": {
+        "days_since_last_purchase": 98,
+        "expected_interval": 35.5,
+        "delay": 62.5,
+        "seasonal_time_score": 3.084485617124554,
+        "reorder_probability": 0.8968018889427185,
+        "replenishment_score": 2.120203114696556,
+        "stat_avg_interval_days": 110.2,
+        "stat_grading_eur": 23786.0,
+        "stat_f_in_fixed": 3.75,
+        "stat_n_active_products": 4.0,
+        "stat_behavioral_status": "Out-of-period / Holiday behavior",
+        "stat_cluster": 3.0
+      },
+      "linked_signals": [
+        "F3-011542"
+      ],
+      "status": "Pending",
+      "rank_top": 5,
+      "adjusted_score": 0.7270056818181818,
+      "selection_reason": {
+        "raw_score": 1.0385795454545454,
+        "adjusted_score": 0.7270056818181818,
+        "penalties_applied": [
+          {
+            "round": 1,
+            "reason": "same_module",
+            "vs_alert_id": "F1-000337",
             "factor": 0.7
           }
         ]

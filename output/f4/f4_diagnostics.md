@@ -17,23 +17,23 @@
 - Layer 3 (linked_signals): CROSS_MODULE_BONUS=0.04 per link
 
 ## Cross-module dedup
-- Rows dropped: 3,259
+- Rows dropped: 1,052
 - Module overlap pair counts (within shared client × product_family_biz):
   - F1∩F2: 0
-  - F1∩F3: 2,418
+  - F1∩F3: 211
   - F2∩F3: 841
   - F1∩F2∩F3: 0
 
 ## Global priority distribution
-- P1 Critical: 866
-- P2 High:     2,598
-- P3 Medium:   5,197
-- P4 Low:      8,658
-- **Total:**   17,319
+- P1 Critical: 867
+- P2 High:     2,547
+- P3 Medium:   5,121
+- P4 Low:      8,533
+- **Total:**   17,068
 
 ## Module share in global Top-100
-- F3: 63
-- F1: 37
+- F3: 90
+- F1: 10
 
 ## Top-5 module distribution
 - F1: 2  |  F2: 1  |  F3: 2
@@ -43,11 +43,11 @@
 
 | Round | Alert | Module | Client | unified_score | adjusted_score_at_pick | penalties_carried |
 |---|---|---|---|---|---|---|
-| 1 | F1-000050 | F1 | 1000082089 | 1.0400 | 1.0400 | 0 |
+| 1 | F1-000337 | F1 | 10052 | 1.0395 | 1.0395 | 0 |
 | 2 | F3-000018 | F3 | 39718 | 1.0394 | 1.0394 | 0 |
 | 3 | F2-000001 | F2 | 7135 | 1.0000 | 1.0000 | 0 |
-| 4 | F1-000100 | F1 | 28152 | 1.0398 | 0.7278 | 1 |
-| 5 | F3-000022 | F3 | 6642 | 1.0391 | 0.7274 | 1 |
+| 4 | F3-000022 | F3 | 6642 | 1.0391 | 0.7274 | 1 |
+| 5 | F1-000781 | F1 | 37656 | 1.0386 | 0.7270 | 1 |
 
 ## Robustness notes
 - evidence dict NaN → null: handled
