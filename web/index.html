@@ -203,6 +203,17 @@
   }
   select.flt:focus { outline: 2px solid var(--inibsa-blue); outline-offset: 1px; }
 
+  .search-wrap { position: relative; display: inline-flex; align-items: center; }
+  .search-wrap svg { position: absolute; left: 9px; pointer-events: none; color: #6B7A90; }
+  input.flt {
+    font-size: 12px; font-weight: 500; padding: 6px 10px 6px 30px;
+    border-radius: 8px; border: 1px solid var(--inibsa-line);
+    background: white; color: var(--inibsa-ink);
+    min-width: 200px; outline: none;
+  }
+  input.flt:focus { outline: 2px solid var(--inibsa-blue); outline-offset: 1px; }
+  input.flt::placeholder { color: #9BAABB; }
+
   /* KPI cards */
   .kpi { display: flex; flex-direction: column; gap: 4px; }
   .kpi .lbl { font-size: 11px; font-weight: 600; color: var(--inibsa-mute); text-transform: uppercase; letter-spacing: .06em; }
@@ -539,7 +550,7 @@ window.PROVINCE_CENTROIDS = {
     flt_priority: "Priority",
     flt_subtype: "Sub-type",
     flt_status: "Status",
-    flt_search: "Search client ID…",
+    flt_search: "Search client, province or alert ID…",
     flt_all: "All",
     flt_reset: "Reset",
     n_results: "results",
@@ -655,7 +666,7 @@ window.PROVINCE_CENTROIDS = {
     flt_priority: "Prioridad",
     flt_subtype: "Subtipo",
     flt_status: "Estado",
-    flt_search: "Buscar ID de cliente…",
+    flt_search: "Buscar cliente, provincia o ID de alerta…",
     flt_all: "Todas",
     flt_reset: "Limpiar",
     n_results: "resultados",
@@ -1340,7 +1351,12 @@ window.WEEKDAYS = {
               <option value="Resolved">${t('status_Resolved')}</option>
             </select>
           </div>
-          <input class="flt" data-flt="q" placeholder="${t('flt_search')}" style="min-width:180px; padding-right:10px; background-image:none;">
+          <div class="search-wrap">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input class="flt" data-flt="q" placeholder="${t('flt_search')}">
+          </div>
           <button class="filter-chip" data-flt-reset>${t('flt_reset')}</button>
           <span class="ml-auto text-[11px] text-inibsa-mute"><span data-result-count>0</span> <span data-i="n_results">${t('n_results')}</span></span>
         </div>
@@ -1397,7 +1413,7 @@ window.WEEKDAYS = {
       const st = state.statuses[a.alert_id] || a.status || 'Pending';
       if (f.status !== 'ALL' && st !== f.status) return false;
       if (q) {
-        const searchTarget = [a.client_id || '', a.client_label || '', a.province || ''].join(' ').toLowerCase();
+        const searchTarget = [a.alert_id || '', a.client_id || '', a.client_label || '', a.province || ''].join(' ').toLowerCase();
         if (!searchTarget.includes(q)) return false;
       }
       return true;
